@@ -1,0 +1,73 @@
+import 'package:class2data/data/database/app_database.dart';
+
+/// 课包自动推荐服务。
+///
+/// 在当前课程范围内推荐最合适的可用课包。
+class PackageSelectionService {
+  /// 从可用课包中推荐一个最合适的。
+  ///
+  /// [packages] — 当前课程下所有未作废的课包
+  /// [classRecords] — 同课程历史上课记录（用于排序偏好）
+  /// [classDate] — 上课日期（YYYY-MM-DD），用于排除生效日期晚的课包
+  int? recommendPackage({
+    required List<Package> packages,
+    required List<ClassRecord> classRecords,
+    required String classDate,
+  }) {
+    // 候选过滤
+    final candidates = packages.where((p) {
+      if (p.isVoided) return false;
+      if (p.validFrom != null &&
+          classDate.compareTo(_formatDate(p.validFrom!)) < 0) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    if (candidates.isEmpty) return null;
+
+    // 排除已用完的课包（从候选中移除，但保留为备选）
+    final available = <Package>[];
+    final usedUp = <Package>[];
+    for (final p in candidates) {
+      if (p.totalCredits == null) {
+        // 周期卡/不限次，视为可用
+        available.add(p);
+      } else {
+        available.add(p);
+        // 实际余额需要流水数据，此处简化：不在此层排除
+      }
+    }
+
+    if (available.isEmpty && usedUp.isEmpty) return null;
+    final pool = available.isNotEmpty ? available : usedUp;
+
+    // 排序规则
+    // 1. 最近一次同课程使用过的课包优先
+    final recentPackageIds = <int>[];
+    for (final r in classRecords.reversed) {
+      if (r.packageId != null && !recentPackageIds.contains(r.packageId)) {
+        recentPackageIds.add(r.packageId!);
+      }
+    }
+
+    // 按最近使用排序
+    pool.sort((a, b) {
+      final aIdx = recentPackageIds.indexOf(a.id);
+      final bIdx = recentPackageIds.indexOf(b.id);
+      if (aIdx != -1 && bIdx != -1) return aIdx.compareTo(bIdx);
+      if (aIdx != -1) return -1;
+      if (bIdx != -1) return 1;
+      // 更早购买的优先
+      return a.purchaseDate.compareTo(b.purchaseDate);
+    });
+
+    return pool.first.id;
+  }
+
+  String _formatDate(DateTime d) {
+    return '${d.year.toString().padLeft(4, '0')}-'
+        '${d.month.toString().padLeft(2, '0')}-'
+        '${d.day.toString().padLeft(2, '0')}';
+  }
+}

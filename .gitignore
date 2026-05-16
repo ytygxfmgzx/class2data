@@ -111,3 +111,9 @@ windows/flutter/ephemeral/
 *.app
 *.dSYM/
 
+# Claude Code local settings
+.claude/settings.local.json
+
+# Temporary files
+_temp/
+
