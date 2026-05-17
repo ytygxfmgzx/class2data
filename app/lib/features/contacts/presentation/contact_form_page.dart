@@ -228,6 +228,178 @@ class _ContactFormPageState extends ConsumerState<ContactFormPage> {
   }
 }
 
+class ContactFormBottomSheet extends ConsumerStatefulWidget {
+  final int courseId;
+
+  const ContactFormBottomSheet({super.key, required this.courseId});
+
+  @override
+  ConsumerState<ContactFormBottomSheet> createState() =>
+      _ContactFormBottomSheetState();
+}
+
+class _ContactFormBottomSheetState
+    extends ConsumerState<ContactFormBottomSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _wechatController = TextEditingController();
+  final _notesController = TextEditingController();
+  String? _selectedRole = 'teacher';
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _wechatController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    final repo = ref.read(contactRepositoryProvider);
+    final now = DateTime.now();
+    final name = _nameController.text.trim();
+
+    await repo.insertContact(
+      ContactsCompanion.insert(
+        kidCourseId: widget.courseId,
+        name: name,
+        role: Value(_selectedRole),
+        roleNameSnapshot: Value(_selectedRole),
+        phone: Value(
+          _phoneController.text.trim().isEmpty
+              ? null
+              : _phoneController.text.trim(),
+        ),
+        wechat: Value(
+          _wechatController.text.trim().isEmpty
+              ? null
+              : _wechatController.text.trim(),
+        ),
+        notes: Value(
+          _notesController.text.trim().isEmpty
+              ? null
+              : _notesController.text.trim(),
+        ),
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      Navigator.pop(context, true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Center(
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              width: 32,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '添加联系人',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _isLoading ? null : _save,
+                  child: const Text('保存'),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  const _Label(label: '姓名'),
+                  const SizedBox(height: 4),
+                  TextFormField(
+                    controller: _nameController,
+                    validator: (v) =>
+                        v == null || v.trim().isEmpty ? '请输入姓名' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  const _Label(label: '角色'),
+                  const SizedBox(height: 4),
+                  DropdownButtonFormField<String>(
+                    initialValue: _selectedRole,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'teacher', child: Text('老师')),
+                      DropdownMenuItem(value: 'coach', child: Text('教练')),
+                      DropdownMenuItem(value: 'advisor', child: Text('顾问')),
+                    ],
+                    onChanged: (v) => setState(() => _selectedRole = v),
+                  ),
+                  const SizedBox(height: 16),
+                  const _Label(label: '电话'),
+                  const SizedBox(height: 4),
+                  TextFormField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                  ),
+                  const SizedBox(height: 16),
+                  const _Label(label: '微信'),
+                  const SizedBox(height: 4),
+                  TextFormField(controller: _wechatController),
+                  const SizedBox(height: 16),
+                  const _Label(label: '备注'),
+                  const SizedBox(height: 4),
+                  TextFormField(controller: _notesController, maxLines: 3),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _Label extends StatelessWidget {
   final String label;
 

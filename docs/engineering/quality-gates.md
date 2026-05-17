@@ -125,6 +125,7 @@ flutter test
 
 ## 发布前检查
 
+- **构建时必须传入 `--dart-define=FEEDBACK_TOKEN=<token>`**，否则反馈功能无法使用（发送会被 Worker 拒绝 401）。Token 值见 Cloudflare Dashboard 加密变量 `FEEDBACK_TOKEN`。
 - 第一版范围内主路径全部可用。
 - `flutter analyze` 无错误。
 - `flutter test` 通过。

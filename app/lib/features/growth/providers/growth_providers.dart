@@ -359,7 +359,7 @@ final growthFeedProvider = FutureProvider<List<GrowthFeedEvent>>((ref) async {
             childAvatarPath: child.avatarPath,
             courseId: course?.id,
             courseName: course?.name,
-            title: '成就记录',
+            title: a.typeNameSnapshot ?? '成长记录',
             subtitle: _achievementSubtitle(a, course),
             notes: a.notes ?? a.description,
             imagePaths: attachmentMap[a.id] ?? [],
@@ -478,7 +478,6 @@ String? _classRecordSubtitle(ClassRecord r) {
 
 String _achievementSubtitle(Achievement a, KidCourse? course) {
   final parts = <String>[];
-  if (a.typeNameSnapshot != null) parts.add(a.typeNameSnapshot!);
   if (course != null) parts.add(course.name);
   return parts.join(' · ');
 }

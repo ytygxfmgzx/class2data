@@ -106,7 +106,7 @@ class KidCourseDao extends DatabaseAccessor<AppDatabase>
 
       // 成就的 kidCourseId 是 nullable，只清除关联
       await (update(db.achievements)..where((t) => t.kidCourseId.equals(id)))
-          .write(const AchievementsCompanion(kidCourseId: Value.absent()));
+          .write(const AchievementsCompanion(kidCourseId: Value(null)));
 
       // 最后删课程本身
       await (delete(kidCourses)..where((t) => t.id.equals(id))).go();

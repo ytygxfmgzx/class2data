@@ -129,6 +129,8 @@ class Payments extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get kidCourseId => integer().references(KidCourses, #id)();
   IntColumn get packageId => integer().nullable().references(Packages, #id)();
+  IntColumn get achievementId =>
+      integer().nullable().references(Achievements, #id)();
   TextColumn get type => text().nullable()();
   TextColumn get typeNameSnapshot => text().nullable()();
   IntColumn get amountCents => integer()();
@@ -138,7 +140,7 @@ class Payments extends Table {
   DateTimeColumn get updatedAt => dateTime()();
 }
 
-// === 成就记录 ===
+// === 成长记录 ===
 
 class Achievements extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -153,6 +155,22 @@ class Achievements extends Table {
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
+}
+
+// === 成长记录类型关联 ===
+
+class AchievementTypeLinks extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get achievementId => integer().references(Achievements, #id)();
+  TextColumn get type => text().withLength(min: 1, max: 50)();
+  TextColumn get typeNameSnapshot => text()();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {achievementId, type},
+  ];
 }
 
 // === 附件 ===

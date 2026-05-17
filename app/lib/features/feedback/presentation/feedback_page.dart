@@ -1,8 +1,13 @@
+import 'dart:io';
+
 import 'package:class2data/core/result/result.dart';
 import 'package:class2data/data/database/app_database.dart';
 import 'package:class2data/features/feedback/providers/feedback_providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 class FeedbackPage extends ConsumerStatefulWidget {
   const FeedbackPage({super.key});
@@ -83,12 +88,30 @@ class _FeedbackPageState extends ConsumerState<FeedbackPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
 
+  void _showContactSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      builder: (ctx) => const _ContactSheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final entriesAsync = ref.watch(feedbackEntriesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('我要反馈')),
+      appBar: AppBar(
+        title: const Text('我要反馈'),
+        actions: [
+          TextButton(
+            onPressed: () => _showContactSheet(context),
+            child: const Text('联系我'),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -394,5 +417,134 @@ class _FeedbackRecordTile extends StatelessWidget {
         '${value.day.toString().padLeft(2, '0')} '
         '${value.hour.toString().padLeft(2, '0')}:'
         '${value.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+class _ContactSheet extends StatefulWidget {
+  const _ContactSheet();
+
+  @override
+  State<_ContactSheet> createState() => _ContactSheetState();
+}
+
+class _ContactSheetState extends State<_ContactSheet> {
+  static const _wechatId = 'chle630';
+  bool _copied = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Text(
+                  '联系我',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Icon(
+                    Icons.close,
+                    size: 20,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/images/wechat_qrcode.png',
+                width: 200,
+                height: 200,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '微信号：$_wechatId',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () {
+                    Clipboard.setData(const ClipboardData(text: _wechatId));
+                    setState(() => _copied = true);
+                    Future.delayed(const Duration(seconds: 2), () {
+                      if (mounted) setState(() => _copied = false);
+                    });
+                  },
+                  child: Icon(
+                    _copied ? Icons.check : Icons.copy,
+                    size: 18,
+                    color: _copied ? Colors.green : theme.colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            AnimatedOpacity(
+              opacity: _copied ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 200),
+              child: Text(
+                '微信号已复制到剪切板，去微信加好友吧',
+                style: TextStyle(fontSize: 12, color: Colors.green.shade700),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => _shareQrcode(context),
+                icon: const Icon(Icons.share, size: 18),
+                label: const Text('分享二维码到微信'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _shareQrcode(BuildContext context) async {
+    try {
+      final byteData = await rootBundle.load('assets/images/wechat_qrcode.png');
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/wechat_qrcode.png');
+      await file.writeAsBytes(byteData.buffer.asUint8List());
+      if (context.mounted) {
+        await Share.shareXFiles([XFile(file.path)], text: '扫码加微信好友');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('分享失败: $e')));
+      }
+    }
   }
 }

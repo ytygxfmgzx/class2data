@@ -15,6 +15,7 @@ part 'child_dao.g.dart';
     CreditTransactions,
     Payments,
     Achievements,
+    AchievementTypeLinks,
     Attachments,
     Contacts,
   ],
@@ -201,6 +202,9 @@ class ChildDao extends DatabaseAccessor<AppDatabase> with _$ChildDaoMixin {
                   t.ownerId.isIn(achievementIds),
             ))
             .go();
+        await (delete(
+          achievementTypeLinks,
+        )..where((t) => t.achievementId.isIn(achievementIds))).go();
       }
       await (delete(
         achievements,

@@ -1,5 +1,5 @@
 name: class2data
-description: "课外班记录 — 家庭课外班账本和成长档案"
+description: "课小记 — 家庭课外班账本和成长档案"
 publish_to: 'none'
 version: 0.1.0+1
 
@@ -58,6 +58,19 @@ dev_dependencies:
 
   # Lint
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/
+
+flutter_launcher_icons:
+  image_path: assets/branding/app_icon.png
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  windows:
+    generate: true
+    image_path: assets/branding/app_icon.png
+    icon_size: 48

@@ -18,9 +18,11 @@ class ExportDao extends DatabaseAccessor<AppDatabase> {
     'credit_transactions',
     'payments',
     'achievements',
+    'achievement_type_links',
     'attachments',
     'contacts',
     'tags',
+    'feedback_entries',
   ];
 
   /// 查询指定表全部数据。

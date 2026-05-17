@@ -174,7 +174,7 @@ class BackupFileStore {
       if (manifest.format != 'class2data-backup') {
         return const BackupValidation(
           isValid: false,
-          errorMessage: '不是有效的课外班记录备份文件',
+          errorMessage: '不是有效的课小记录备份文件',
         );
       }
 

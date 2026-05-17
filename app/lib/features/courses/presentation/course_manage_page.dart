@@ -140,27 +140,6 @@ class CourseManagePage extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: course.isArchived
-                          ? theme.colorScheme.surfaceContainerHighest
-                          : theme.colorScheme.tertiaryContainer,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                    child: Text(
-                      course.isArchived ? '已归档' : '启用',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: course.isArchived
-                            ? theme.colorScheme.onSurfaceVariant
-                            : theme.colorScheme.onTertiaryContainer,
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),

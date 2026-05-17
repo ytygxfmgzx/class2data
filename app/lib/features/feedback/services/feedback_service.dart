@@ -9,9 +9,11 @@ import 'package:drift/drift.dart' show Value;
 import 'package:package_info_plus/package_info_plus.dart';
 
 class FeedbackService {
-  static final Uri _webhookUri = Uri.parse(
-    'https://open.feishu.cn/open-apis/bot/v2/hook/102873fe-38e4-4763-9ed4-60ad55faf1dd',
+  static const String _endpoint = String.fromEnvironment(
+    'FEEDBACK_ENDPOINT',
+    defaultValue: 'https://feishufeedback.riddles.top',
   );
+  static final Uri _webhookUri = Uri.parse(_endpoint);
 
   final FeedbackRepository _repository;
 
@@ -106,6 +108,10 @@ class FeedbackService {
     try {
       final request = await client.postUrl(_webhookUri);
       request.headers.contentType = ContentType.json;
+      const token = String.fromEnvironment('FEEDBACK_TOKEN');
+      if (token.isNotEmpty) {
+        request.headers.set('X-Feedback-Token', token);
+      }
       request.write(jsonEncode(_buildCardPayload(entry)));
       final response = await request.close();
       final body = await response.transform(utf8.decoder).join();
@@ -143,7 +149,7 @@ class FeedbackService {
         'config': {'wide_screen_mode': true},
         'header': {
           'template': 'blue',
-          'title': {'tag': 'plain_text', 'content': '课外班记录 App 用户反馈'},
+          'title': {'tag': 'plain_text', 'content': '课小记 App 用户反馈'},
         },
         'elements': [
           {
@@ -186,7 +192,7 @@ class FeedbackService {
     final packageInfo = await PackageInfo.fromPlatform();
     final appName = packageInfo.appName.trim().isNotEmpty
         ? packageInfo.appName.trim()
-        : '课外班记录';
+        : '课小记';
     final appVersion = '${packageInfo.version}+${packageInfo.buildNumber}';
 
     return _FeedbackMetadata(

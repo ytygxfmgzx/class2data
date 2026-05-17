@@ -7,5 +7,6 @@ mixin _$PaymentDaoMixin on DatabaseAccessor<AppDatabase> {
   $ChildrenTable get children => attachedDatabase.children;
   $KidCoursesTable get kidCourses => attachedDatabase.kidCourses;
   $PackagesTable get packages => attachedDatabase.packages;
+  $AchievementsTable get achievements => attachedDatabase.achievements;
   $PaymentsTable get payments => attachedDatabase.payments;
 }

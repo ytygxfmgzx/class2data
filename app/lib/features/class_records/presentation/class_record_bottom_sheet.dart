@@ -343,10 +343,11 @@ class _ClassRecordBottomSheetState
           ),
           const Divider(height: 1),
           // 表单
-          Expanded(
+          Flexible(
             child: Form(
               key: _formKey,
               child: ListView(
+                shrinkWrap: true,
                 padding: const EdgeInsets.all(16),
                 children: [
                   // 状态选择
@@ -445,10 +446,7 @@ class _ClassRecordBottomSheetState
                               .map(
                                 (p) => DropdownMenuItem(
                                   value: p.id,
-                                  child: Text(
-                                    '${CreditBalanceService().packageTypeLabel(p.type)} · ${p.purchaseDate.month}/${p.purchaseDate.day}',
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
+                                  child: _PackageDropdownLabel(package: p),
                                 ),
                               )
                               .toList(),
@@ -629,6 +627,61 @@ class _PendingPhotoThumb extends StatelessWidget {
               child: const Icon(Icons.close, size: 12, color: Colors.white),
             ),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PackageDropdownLabel extends StatelessWidget {
+  final Package package;
+  const _PackageDropdownLabel({required this.package});
+
+  @override
+  Widget build(BuildContext context) {
+    final bs = CreditBalanceService();
+    final theme = Theme.of(context);
+    final name =
+        '${bs.formatDate(package.purchaseDate)} ${bs.packageTypeLabel(package.type)}';
+
+    final hasValidity = package.validFrom != null || package.validUntil != null;
+    if (!hasValidity) {
+      return Text(name, style: const TextStyle(fontSize: 13));
+    }
+
+    final status = bs.periodPackageStatusLabel(
+      now: DateTime.now(),
+      validFrom: package.validFrom,
+      validUntil: package.validUntil,
+    );
+    final (bg, fg) = switch (status) {
+      '未开始' => (
+        theme.colorScheme.tertiaryContainer,
+        theme.colorScheme.onTertiaryContainer,
+      ),
+      '进行中' => (const Color(0xFFDCFCE7), const Color(0xFF166534)),
+      '已结束' => (
+        theme.colorScheme.surfaceContainerHighest,
+        theme.colorScheme.onSurfaceVariant,
+      ),
+      _ => (
+        theme.colorScheme.tertiaryContainer,
+        theme.colorScheme.onTertiaryContainer,
+      ),
+    };
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(child: Text(name, style: const TextStyle(fontSize: 13))),
+        const SizedBox(width: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: Text(status, style: TextStyle(fontSize: 10, color: fg)),
         ),
       ],
     );

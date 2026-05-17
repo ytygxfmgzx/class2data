@@ -158,6 +158,33 @@ final weekHomeItemsProvider =
       final packageInfo = await _computePackageInfo(db, courseIds);
       for (int i = 0; i < items.length; i++) {
         final info = packageInfo[items[i].kidCourseId];
+        final itemDate = DateTime.parse(items[i].date);
+
+        // 逐项检查周期卡在该日期是否有效
+        final hasActivePeriodPack = (info?.periodPackages ?? []).any((p) {
+          if (p.validFrom != null && itemDate.isBefore(p.validFrom!)) {
+            return false;
+          }
+          if (p.validUntil != null && itemDate.isAfter(p.validUntil!)) {
+            return false;
+          }
+          return true;
+        });
+
+        final hasAvailable =
+            hasActivePeriodPack || (info?.hasCreditBalance ?? false);
+
+        String? remainingLabel;
+        if (hasActivePeriodPack) {
+          remainingLabel = '有效';
+        } else if (info?.hasCreditBalance == true) {
+          remainingLabel = info?.remainingCreditsLabel;
+        } else if (info?.periodPackages.isNotEmpty == true) {
+          remainingLabel = '已过期';
+        } else {
+          remainingLabel = info?.remainingCreditsLabel;
+        }
+
         items[i] = HomeDayItem(
           scheduleId: items[i].scheduleId,
           kidCourseId: items[i].kidCourseId,
@@ -169,9 +196,9 @@ final weekHomeItemsProvider =
           classNameSnapshot: items[i].classNameSnapshot,
           recordId: items[i].recordId,
           recordStatus: items[i].recordStatus,
-          hasAvailablePackage: info?.hasAvailable ?? false,
+          hasAvailablePackage: hasAvailable,
           packageTypeLabel: info?.typeLabel,
-          remainingCreditsLabel: info?.remainingLabel,
+          remainingCreditsLabel: remainingLabel,
         );
       }
 
@@ -179,14 +206,16 @@ final weekHomeItemsProvider =
     });
 
 class _CoursePackageSummary {
-  final bool hasAvailable;
+  final bool hasCreditBalance;
   final String? typeLabel;
-  final String? remainingLabel;
+  final String? remainingCreditsLabel;
+  final List<Package> periodPackages;
 
   const _CoursePackageSummary({
-    required this.hasAvailable,
+    required this.hasCreditBalance,
     this.typeLabel,
-    this.remainingLabel,
+    this.remainingCreditsLabel,
+    this.periodPackages = const [],
   });
 }
 
@@ -195,7 +224,6 @@ Future<Map<int, _CoursePackageSummary>> _computePackageInfo(
   Set<int> courseIds,
 ) async {
   final result = <int, _CoursePackageSummary>{};
-  final now = DateTime.now();
   final balanceService = CreditBalanceService();
   final txDao = CreditTransactionDao(db);
 
@@ -213,32 +241,19 @@ Future<Map<int, _CoursePackageSummary>> _computePackageInfo(
         .toList();
     final typeLabel = typeLabels.isNotEmpty ? typeLabels.join('、') : null;
 
-    // 检查有效周期卡
-    final hasActivePeriodPack = packages.any((p) {
-      if (p.type != 'period_pack') return false;
-      if (p.validFrom != null && now.isBefore(p.validFrom!)) return false;
-      if (p.validUntil != null && now.isAfter(p.validUntil!)) return false;
-      return true;
-    });
-
-    if (hasActivePeriodPack) {
-      result[courseId] = _CoursePackageSummary(
-        hasAvailable: true,
-        typeLabel: typeLabel,
-        remainingLabel: '有效',
-      );
-      continue;
-    }
+    // 分离周期卡，供逐项按日期判断
+    final periodPacks = packages.where((p) => p.type == 'period_pack').toList();
 
     // 课时余额
     final transactions = await txDao.getByCourseId(courseId);
     final balance = balanceService.courseBalance(transactions);
     result[courseId] = _CoursePackageSummary(
-      hasAvailable: balance > 0,
+      hasCreditBalance: balance > 0,
       typeLabel: typeLabel,
-      remainingLabel: balance > 0
+      remainingCreditsLabel: balance > 0
           ? '余${balanceService.formatCredits(balance)}节'
           : (typeLabel != null ? '已用完' : null),
+      periodPackages: periodPacks,
     );
   }
   return result;

@@ -17,31 +17,11 @@ class PackageListSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final packagesAsync = ref.watch(packagesByCourseProvider(courseId));
-    final theme = Theme.of(context);
     final balanceService = CreditBalanceService();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Text(
-                '课包',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const Spacer(),
-              TextButton(
-                onPressed: () =>
-                    context.push('/courses/$courseId/packages/add'),
-                child: const Text('录入'),
-              ),
-            ],
-          ),
-        ),
         packagesAsync.when(
           loading: () => const SizedBox.shrink(),
           error: (e, _) => Padding(
@@ -102,6 +82,34 @@ class _PackageRow extends ConsumerWidget {
     final isVoided = package.isVoided;
     final typeLabel = balanceService.packageTypeLabel(package.type);
     final amountText = balanceService.formatAmount(package.amountCents);
+    final nameText =
+        '${balanceService.formatDate(package.purchaseDate)} $typeLabel';
+
+    // 有效期状态标签（仅有 validFrom/validUntil 的课包才显示）
+    final hasValidity = package.validFrom != null || package.validUntil != null;
+    final statusLabel = hasValidity
+        ? balanceService.periodPackageStatusLabel(
+            now: DateTime.now(),
+            validFrom: package.validFrom,
+            validUntil: package.validUntil,
+          )
+        : null;
+
+    final (statusBg, statusFg) = switch (statusLabel) {
+      '未开始' => (
+        theme.colorScheme.tertiaryContainer,
+        theme.colorScheme.onTertiaryContainer,
+      ),
+      '进行中' => (const Color(0xFFDCFCE7), const Color(0xFF166534)),
+      '已结束' => (
+        theme.colorScheme.surfaceContainerHighest,
+        theme.colorScheme.onSurfaceVariant,
+      ),
+      _ => (
+        theme.colorScheme.tertiaryContainer,
+        theme.colorScheme.onTertiaryContainer,
+      ),
+    };
 
     final subtitle = _buildSubtitle(balanceText);
 
@@ -126,14 +134,39 @@ class _PackageRow extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '${_formatDate(package.purchaseDate)} $typeLabel',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      decoration: isVoided ? TextDecoration.lineThrough : null,
-                      color: isVoided
-                          ? theme.colorScheme.onSurfaceVariant
-                          : null,
-                    ),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          nameText,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            decoration: isVoided
+                                ? TextDecoration.lineThrough
+                                : null,
+                            color: isVoided
+                                ? theme.colorScheme.onSurfaceVariant
+                                : null,
+                          ),
+                        ),
+                      ),
+                      if (statusLabel != null) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: statusBg,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            statusLabel,
+                            style: TextStyle(fontSize: 11, color: statusFg),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -166,28 +199,20 @@ class _PackageRow extends ConsumerWidget {
   }
 
   String _buildSubtitle(String balanceText) {
-    final typeLabel = balanceService.packageTypeLabel(package.type);
     if (package.type == 'period_pack') {
-      final status = balanceService.periodPackageStatusLabel(
-        now: DateTime.now(),
-        validFrom: package.validFrom,
-        validUntil: package.validUntil,
-      );
-      final validity = balanceService.periodPackageValidityLabel(
+      return balanceService.periodPackageValidityLabel(
         package.validFrom,
         package.validUntil,
       );
-      return '$typeLabel · $status · $validity';
     }
 
+    final typeLabel = balanceService.packageTypeLabel(package.type);
     var subtitle = typeLabel;
     if (package.totalCredits != null) {
       subtitle += ' · ${balanceService.formatCredits(package.totalCredits!)}课时';
     }
     return '$subtitle · $balanceText剩余';
   }
-
-  String _formatDate(DateTime d) => '${d.month}/${d.day}';
 }
 
 class _DeleteButton extends ConsumerWidget {

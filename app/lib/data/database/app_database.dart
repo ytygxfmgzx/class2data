@@ -19,6 +19,7 @@ part 'app_database.g.dart';
     CreditTransactions,
     Payments,
     Achievements,
+    AchievementTypeLinks,
     Attachments,
     Contacts,
     Tags,
@@ -31,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration {
@@ -48,6 +49,11 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 3) {
           await m.createTable(feedbackEntries);
+        }
+        if (from < 4) {
+          await _safeAddColumn(m, payments, payments.achievementId);
+          await m.createTable(achievementTypeLinks);
+          await _ensurePresetTags();
         }
       },
     );
@@ -349,6 +355,105 @@ const _presetTags = <_PresetTag>[
     displayName: '考级费',
     isSystem: false,
     sortOrder: 3,
+  ),
+  _PresetTag(
+    category: 'payment_type',
+    code: 'competition',
+    displayName: '比赛费',
+    isSystem: false,
+    sortOrder: 4,
+  ),
+  _PresetTag(
+    category: 'payment_type',
+    code: 'props',
+    displayName: '道具费',
+    isSystem: false,
+    sortOrder: 5,
+  ),
+  _PresetTag(
+    category: 'payment_type',
+    code: 'costume',
+    displayName: '服装费',
+    isSystem: false,
+    sortOrder: 6,
+  ),
+  _PresetTag(
+    category: 'payment_type',
+    code: 'registration',
+    displayName: '报名费',
+    isSystem: false,
+    sortOrder: 7,
+  ),
+  _PresetTag(
+    category: 'payment_type',
+    code: 'other',
+    displayName: '其他费用',
+    isSystem: false,
+    sortOrder: 99,
+  ),
+  // 成长记录类型（普通标签，可自定义）
+  _PresetTag(
+    category: 'achievement_type',
+    code: 'competition_activity',
+    displayName: '比赛/活动',
+    isSystem: false,
+    sortOrder: 1,
+  ),
+  _PresetTag(
+    category: 'achievement_type',
+    code: 'award',
+    displayName: '获奖',
+    isSystem: false,
+    sortOrder: 2,
+  ),
+  _PresetTag(
+    category: 'achievement_type',
+    code: 'certificate',
+    displayName: '证书',
+    isSystem: false,
+    sortOrder: 3,
+  ),
+  _PresetTag(
+    category: 'achievement_type',
+    code: 'exam',
+    displayName: '考级',
+    isSystem: false,
+    sortOrder: 4,
+  ),
+  _PresetTag(
+    category: 'achievement_type',
+    code: 'performance',
+    displayName: '演出',
+    isSystem: false,
+    sortOrder: 5,
+  ),
+  _PresetTag(
+    category: 'achievement_type',
+    code: 'work',
+    displayName: '作品',
+    isSystem: false,
+    sortOrder: 6,
+  ),
+  _PresetTag(
+    category: 'achievement_type',
+    code: 'teacher_feedback',
+    displayName: '老师评价',
+    isSystem: false,
+    sortOrder: 7,
+  ),
+  _PresetTag(
+    category: 'achievement_type',
+    code: 'supplies',
+    displayName: '用品/道具',
+    isSystem: false,
+    sortOrder: 8,
+  ),
+  _PresetTag(
+    category: 'achievement_type',
+    code: 'other',
+    displayName: '其他',
+    isSystem: false,
+    sortOrder: 99,
   ),
   // 联系人角色（普通标签，可自定义）
   _PresetTag(

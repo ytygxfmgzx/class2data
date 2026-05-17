@@ -237,6 +237,15 @@
 | 孩子 | person_add |
 | 照片墙 | photo_library |
 
+### 8.1 App 图标
+
+- 当前 App 图标母版：`app/assets/branding/app_icon.png`。
+- 品牌意象：书本代表“课”，脚印代表“记录与成长痕迹”，低饱和课程标记代表多类型课外班。
+- 图标保持白色/浅色基底，保留极淡浅蓝底形或轻投影来支撑边界，不使用透明背景作为发布母版。
+- 母版要求：正方形 PNG，推荐 1024×1024，不透明，保留足够留白，避免文字、小尺寸复杂细节和强装饰。
+- 平台图标由 `flutter_launcher_icons` 从母版生成，配置在 `app/pubspec.yaml`。
+- 更新图标时，替换母版后在 `app/` 目录运行 `dart run flutter_launcher_icons`，再执行 `flutter analyze` 和 `flutter test`。
+
 ## 9. 页面模板
 
 ### 9.1 Tab 页

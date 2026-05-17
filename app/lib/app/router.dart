@@ -3,6 +3,7 @@ import 'package:class2data/features/achievements/presentation/achievement_form_p
 import 'package:class2data/features/achievements/providers/achievement_providers.dart';
 import 'package:class2data/features/backup/presentation/backup_page.dart';
 import 'package:class2data/features/backup/presentation/export_page.dart';
+import 'package:class2data/features/feedback/presentation/appreciation_page.dart';
 import 'package:class2data/features/feedback/presentation/feedback_page.dart';
 import 'package:class2data/features/children/presentation/child_form_page.dart';
 import 'package:class2data/features/children/presentation/child_list_page.dart';
@@ -24,7 +25,6 @@ import 'package:class2data/features/growth/presentation/growth_statistics_page.d
 import 'package:class2data/features/growth/presentation/photo_wall_page.dart';
 import 'package:class2data/features/home/presentation/home_page.dart';
 import 'package:class2data/features/packages/presentation/package_form_page.dart';
-import 'package:class2data/features/tags/presentation/tag_manage_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -249,12 +249,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'planManage',
         builder: (context, state) => const PlanManagePage(),
       ),
-      // 标签管理
-      GoRoute(
-        path: '/tag-manage',
-        name: 'tagManage',
-        builder: (context, state) => const TagManagePage(),
-      ),
       // 导出
       GoRoute(
         path: '/export',
@@ -266,6 +260,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/statistics',
         name: 'statistics',
         builder: (context, state) => const GrowthStatisticsPage(),
+      ),
+      // 赞赏
+      GoRoute(
+        path: '/appreciation',
+        name: 'appreciation',
+        builder: (context, state) => const AppreciationPage(),
       ),
       // 意见反馈
       GoRoute(
@@ -373,11 +373,6 @@ class _SettingsPage extends ConsumerWidget {
                 title: '课程计划维护',
                 onTap: () => context.push('/plan-manage'),
               ),
-              _SettingsRow(
-                icon: Icons.label,
-                title: '标签管理',
-                onTap: () => context.push('/tag-manage'),
-              ),
             ],
           ),
           _SettingsGroup(
@@ -394,6 +389,11 @@ class _SettingsPage extends ConsumerWidget {
           _SettingsGroup(
             title: '关于',
             children: [
+              _SettingsRow(
+                icon: Icons.local_cafe_outlined,
+                title: '请开发者喝茶',
+                onTap: () => context.push('/appreciation'),
+              ),
               _SettingsRow(
                 icon: Icons.feedback_outlined,
                 title: '意见反馈',
@@ -515,7 +515,7 @@ class _AchievementEditWrapper extends ConsumerWidget {
       ),
       data: (achievement) {
         if (achievement == null) {
-          return const Scaffold(body: Center(child: Text('成就不存在')));
+          return const Scaffold(body: Center(child: Text('成长记录不存在')));
         }
         return AchievementFormPage(
           childId: achievement.childId,

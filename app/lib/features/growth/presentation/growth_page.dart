@@ -631,7 +631,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                 ),
                 FilterChip(
                   avatar: const Icon(Icons.emoji_events, size: 14),
-                  label: const Text('成就记录'),
+                  label: const Text('成长记录'),
                   selected: _selectedTypes.contains('achievement'),
                   onSelected: (v) => setState(() {
                     v

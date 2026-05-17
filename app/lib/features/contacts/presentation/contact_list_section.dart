@@ -13,30 +13,10 @@ class ContactListSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final contactsAsync = ref.watch(contactsByCourseProvider(courseId));
-    final theme = Theme.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Text(
-                '联系人',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const Spacer(),
-              TextButton(
-                onPressed: () =>
-                    context.push('/courses/$courseId/contacts/add'),
-                child: const Text('添加'),
-              ),
-            ],
-          ),
-        ),
         contactsAsync.when(
           loading: () => const SizedBox.shrink(),
           error: (e, _) => Padding(

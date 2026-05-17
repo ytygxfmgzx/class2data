@@ -14,13 +14,12 @@ class PackageSelectionService {
     required List<ClassRecord> classRecords,
     required String classDate,
   }) {
-    // 候选过滤
+    // 候选过滤：仅保留在该上课日期有效的课包
     final candidates = packages.where((p) {
       if (p.isVoided) return false;
-      if (p.validFrom != null &&
-          classDate.compareTo(_formatDate(p.validFrom!)) < 0) {
-        return false;
-      }
+      final date = DateTime.parse(classDate);
+      if (p.validFrom != null && date.isBefore(p.validFrom!)) return false;
+      if (p.validUntil != null && date.isAfter(p.validUntil!)) return false;
       return true;
     }).toList();
 
@@ -63,11 +62,5 @@ class PackageSelectionService {
     });
 
     return pool.first.id;
-  }
-
-  String _formatDate(DateTime d) {
-    return '${d.year.toString().padLeft(4, '0')}-'
-        '${d.month.toString().padLeft(2, '0')}-'
-        '${d.day.toString().padLeft(2, '0')}';
   }
 }

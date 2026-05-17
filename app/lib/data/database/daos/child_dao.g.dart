@@ -11,8 +11,10 @@ mixin _$ChildDaoMixin on DatabaseAccessor<AppDatabase> {
   $ClassRecordsTable get classRecords => attachedDatabase.classRecords;
   $CreditTransactionsTable get creditTransactions =>
       attachedDatabase.creditTransactions;
-  $PaymentsTable get payments => attachedDatabase.payments;
   $AchievementsTable get achievements => attachedDatabase.achievements;
+  $PaymentsTable get payments => attachedDatabase.payments;
+  $AchievementTypeLinksTable get achievementTypeLinks =>
+      attachedDatabase.achievementTypeLinks;
   $AttachmentsTable get attachments => attachedDatabase.attachments;
   $ContactsTable get contacts => attachedDatabase.contacts;
 }

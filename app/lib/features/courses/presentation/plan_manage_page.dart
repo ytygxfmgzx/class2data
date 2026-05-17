@@ -238,28 +238,6 @@ class _PlanList extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: schedule.isPaused
-                          ? theme.colorScheme.surfaceContainerHighest
-                          : theme.colorScheme.tertiaryContainer,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                    child: Text(
-                      schedule.isPaused ? '停用' : '启用',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: schedule.isPaused
-                            ? theme.colorScheme.onSurfaceVariant
-                            : theme.colorScheme.onTertiaryContainer,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
                   Icon(
                     Icons.chevron_right,
                     size: 14,

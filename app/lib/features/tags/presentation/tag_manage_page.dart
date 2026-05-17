@@ -25,7 +25,7 @@ const _categoryLabels = {
   'payment_type': '费用类型',
   'contact_role': '联系人角色',
   'course_category': '课程分类',
-  'achievement_type': '成就类型',
+  'achievement_type': '成长记录类型',
 };
 
 class TagManagePage extends ConsumerWidget {

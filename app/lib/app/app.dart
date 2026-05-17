@@ -11,7 +11,7 @@ class Class2DataApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: '课外班记录',
+      title: '课小记',
       theme: AppTheme.light,
       routerConfig: router,
     );

@@ -3,9 +3,11 @@ import 'package:class2data/data/database/app_database.dart';
 import 'package:class2data/domain/models/schedule_slots.dart';
 import 'package:class2data/domain/services/course_statistics_service.dart';
 import 'package:class2data/domain/services/schedule_occurrence_service.dart';
+import 'package:class2data/features/achievements/presentation/achievement_list_section.dart';
 import 'package:class2data/features/children/providers/child_providers.dart';
 import 'package:class2data/features/class_records/presentation/class_record_bottom_sheet.dart';
 import 'package:class2data/features/class_records/presentation/class_record_list_section.dart';
+import 'package:class2data/features/contacts/presentation/contact_form_page.dart';
 import 'package:class2data/features/contacts/presentation/contact_list_section.dart';
 import 'package:class2data/features/courses/presentation/schedule_form_page.dart';
 import 'package:class2data/features/courses/providers/course_providers.dart';
@@ -51,8 +53,8 @@ class CourseDetailPage extends ConsumerWidget {
           }
 
           return DefaultTabController(
-            initialIndex: initialTab.clamp(0, 3),
-            length: 4,
+            initialIndex: initialTab.clamp(0, 4),
+            length: 5,
             child: Column(
               children: [
                 // 头部信息
@@ -68,7 +70,8 @@ class CourseDetailPage extends ConsumerWidget {
                   isScrollable: true,
                   tabAlignment: TabAlignment.start,
                   tabs: [
-                    Tab(text: '记录'),
+                    Tab(text: '上课记录'),
+                    Tab(text: '成长记录'),
                     Tab(text: '课包'),
                     Tab(text: '计划'),
                     Tab(text: '联系人'),
@@ -78,8 +81,10 @@ class CourseDetailPage extends ConsumerWidget {
                 Expanded(
                   child: TabBarView(
                     children: [
-                      // 记录
+                      // 上课记录
                       ClassRecordListSection(courseId: courseId),
+                      // 成长记录
+                      AchievementListSection(courseId: courseId),
                       // 课包
                       SingleChildScrollView(
                         child: PackageListSection(courseId: courseId),
@@ -405,9 +410,10 @@ class _ActionButtons extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
+          SizedBox(
+            width: double.infinity,
             child: FilledButton(
               onPressed: () async {
                 final now = DateTime.now();
@@ -436,31 +442,51 @@ class _ActionButtons extends ConsumerWidget {
               child: const Text('记录上课'),
             ),
           ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: OutlinedButton(
-              onPressed: () async {
-                await showModalBottomSheet<bool>(
-                  context: context,
-                  isScrollControlled: true,
-                  builder: (_) => PackageFormBottomSheet(courseId: courseId),
-                );
-              },
-              child: const Text('录入课时包'),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: OutlinedButton(
-              onPressed: () async {
-                await showModalBottomSheet<bool>(
-                  context: context,
-                  isScrollControlled: true,
-                  builder: (_) => ScheduleFormBottomSheet(courseId: courseId),
-                );
-              },
-              child: const Text('添加计划'),
-            ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () async {
+                    await showModalBottomSheet<bool>(
+                      context: context,
+                      isScrollControlled: true,
+                      builder: (_) =>
+                          PackageFormBottomSheet(courseId: courseId),
+                    );
+                  },
+                  child: const Text('+课包'),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () async {
+                    await showModalBottomSheet<bool>(
+                      context: context,
+                      isScrollControlled: true,
+                      builder: (_) =>
+                          ScheduleFormBottomSheet(courseId: courseId),
+                    );
+                  },
+                  child: const Text('+上课计划'),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () async {
+                    await showModalBottomSheet<bool>(
+                      context: context,
+                      isScrollControlled: true,
+                      builder: (_) =>
+                          ContactFormBottomSheet(courseId: courseId),
+                    );
+                  },
+                  child: const Text('+联系人'),
+                ),
+              ),
+            ],
           ),
         ],
       ),

@@ -4878,629 +4878,6 @@ class CreditTransactionsCompanion extends UpdateCompanion<CreditTransaction> {
   }
 }
 
-class $PaymentsTable extends Payments with TableInfo<$PaymentsTable, Payment> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $PaymentsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
-  static const VerificationMeta _kidCourseIdMeta = const VerificationMeta(
-    'kidCourseId',
-  );
-  @override
-  late final GeneratedColumn<int> kidCourseId = GeneratedColumn<int>(
-    'kid_course_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES kid_courses (id)',
-    ),
-  );
-  static const VerificationMeta _packageIdMeta = const VerificationMeta(
-    'packageId',
-  );
-  @override
-  late final GeneratedColumn<int> packageId = GeneratedColumn<int>(
-    'package_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES packages (id)',
-    ),
-  );
-  static const VerificationMeta _typeMeta = const VerificationMeta('type');
-  @override
-  late final GeneratedColumn<String> type = GeneratedColumn<String>(
-    'type',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _typeNameSnapshotMeta = const VerificationMeta(
-    'typeNameSnapshot',
-  );
-  @override
-  late final GeneratedColumn<String> typeNameSnapshot = GeneratedColumn<String>(
-    'type_name_snapshot',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _amountCentsMeta = const VerificationMeta(
-    'amountCents',
-  );
-  @override
-  late final GeneratedColumn<int> amountCents = GeneratedColumn<int>(
-    'amount_cents',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _paymentDateMeta = const VerificationMeta(
-    'paymentDate',
-  );
-  @override
-  late final GeneratedColumn<DateTime> paymentDate = GeneratedColumn<DateTime>(
-    'payment_date',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
-  @override
-  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
-    'notes',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
-    'updatedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
-    'updated_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: true,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    kidCourseId,
-    packageId,
-    type,
-    typeNameSnapshot,
-    amountCents,
-    paymentDate,
-    notes,
-    createdAt,
-    updatedAt,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'payments';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<Payment> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('kid_course_id')) {
-      context.handle(
-        _kidCourseIdMeta,
-        kidCourseId.isAcceptableOrUnknown(
-          data['kid_course_id']!,
-          _kidCourseIdMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_kidCourseIdMeta);
-    }
-    if (data.containsKey('package_id')) {
-      context.handle(
-        _packageIdMeta,
-        packageId.isAcceptableOrUnknown(data['package_id']!, _packageIdMeta),
-      );
-    }
-    if (data.containsKey('type')) {
-      context.handle(
-        _typeMeta,
-        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
-      );
-    }
-    if (data.containsKey('type_name_snapshot')) {
-      context.handle(
-        _typeNameSnapshotMeta,
-        typeNameSnapshot.isAcceptableOrUnknown(
-          data['type_name_snapshot']!,
-          _typeNameSnapshotMeta,
-        ),
-      );
-    }
-    if (data.containsKey('amount_cents')) {
-      context.handle(
-        _amountCentsMeta,
-        amountCents.isAcceptableOrUnknown(
-          data['amount_cents']!,
-          _amountCentsMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_amountCentsMeta);
-    }
-    if (data.containsKey('payment_date')) {
-      context.handle(
-        _paymentDateMeta,
-        paymentDate.isAcceptableOrUnknown(
-          data['payment_date']!,
-          _paymentDateMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_paymentDateMeta);
-    }
-    if (data.containsKey('notes')) {
-      context.handle(
-        _notesMeta,
-        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
-      );
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_createdAtMeta);
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(
-        _updatedAtMeta,
-        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_updatedAtMeta);
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  Payment map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Payment(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      kidCourseId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}kid_course_id'],
-      )!,
-      packageId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}package_id'],
-      ),
-      type: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}type'],
-      ),
-      typeNameSnapshot: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}type_name_snapshot'],
-      ),
-      amountCents: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}amount_cents'],
-      )!,
-      paymentDate: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}payment_date'],
-      )!,
-      notes: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}notes'],
-      ),
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
-    );
-  }
-
-  @override
-  $PaymentsTable createAlias(String alias) {
-    return $PaymentsTable(attachedDatabase, alias);
-  }
-}
-
-class Payment extends DataClass implements Insertable<Payment> {
-  final int id;
-  final int kidCourseId;
-  final int? packageId;
-  final String? type;
-  final String? typeNameSnapshot;
-  final int amountCents;
-  final DateTime paymentDate;
-  final String? notes;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  const Payment({
-    required this.id,
-    required this.kidCourseId,
-    this.packageId,
-    this.type,
-    this.typeNameSnapshot,
-    required this.amountCents,
-    required this.paymentDate,
-    this.notes,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['kid_course_id'] = Variable<int>(kidCourseId);
-    if (!nullToAbsent || packageId != null) {
-      map['package_id'] = Variable<int>(packageId);
-    }
-    if (!nullToAbsent || type != null) {
-      map['type'] = Variable<String>(type);
-    }
-    if (!nullToAbsent || typeNameSnapshot != null) {
-      map['type_name_snapshot'] = Variable<String>(typeNameSnapshot);
-    }
-    map['amount_cents'] = Variable<int>(amountCents);
-    map['payment_date'] = Variable<DateTime>(paymentDate);
-    if (!nullToAbsent || notes != null) {
-      map['notes'] = Variable<String>(notes);
-    }
-    map['created_at'] = Variable<DateTime>(createdAt);
-    map['updated_at'] = Variable<DateTime>(updatedAt);
-    return map;
-  }
-
-  PaymentsCompanion toCompanion(bool nullToAbsent) {
-    return PaymentsCompanion(
-      id: Value(id),
-      kidCourseId: Value(kidCourseId),
-      packageId: packageId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(packageId),
-      type: type == null && nullToAbsent ? const Value.absent() : Value(type),
-      typeNameSnapshot: typeNameSnapshot == null && nullToAbsent
-          ? const Value.absent()
-          : Value(typeNameSnapshot),
-      amountCents: Value(amountCents),
-      paymentDate: Value(paymentDate),
-      notes: notes == null && nullToAbsent
-          ? const Value.absent()
-          : Value(notes),
-      createdAt: Value(createdAt),
-      updatedAt: Value(updatedAt),
-    );
-  }
-
-  factory Payment.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Payment(
-      id: serializer.fromJson<int>(json['id']),
-      kidCourseId: serializer.fromJson<int>(json['kidCourseId']),
-      packageId: serializer.fromJson<int?>(json['packageId']),
-      type: serializer.fromJson<String?>(json['type']),
-      typeNameSnapshot: serializer.fromJson<String?>(json['typeNameSnapshot']),
-      amountCents: serializer.fromJson<int>(json['amountCents']),
-      paymentDate: serializer.fromJson<DateTime>(json['paymentDate']),
-      notes: serializer.fromJson<String?>(json['notes']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'kidCourseId': serializer.toJson<int>(kidCourseId),
-      'packageId': serializer.toJson<int?>(packageId),
-      'type': serializer.toJson<String?>(type),
-      'typeNameSnapshot': serializer.toJson<String?>(typeNameSnapshot),
-      'amountCents': serializer.toJson<int>(amountCents),
-      'paymentDate': serializer.toJson<DateTime>(paymentDate),
-      'notes': serializer.toJson<String?>(notes),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-      'updatedAt': serializer.toJson<DateTime>(updatedAt),
-    };
-  }
-
-  Payment copyWith({
-    int? id,
-    int? kidCourseId,
-    Value<int?> packageId = const Value.absent(),
-    Value<String?> type = const Value.absent(),
-    Value<String?> typeNameSnapshot = const Value.absent(),
-    int? amountCents,
-    DateTime? paymentDate,
-    Value<String?> notes = const Value.absent(),
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) => Payment(
-    id: id ?? this.id,
-    kidCourseId: kidCourseId ?? this.kidCourseId,
-    packageId: packageId.present ? packageId.value : this.packageId,
-    type: type.present ? type.value : this.type,
-    typeNameSnapshot: typeNameSnapshot.present
-        ? typeNameSnapshot.value
-        : this.typeNameSnapshot,
-    amountCents: amountCents ?? this.amountCents,
-    paymentDate: paymentDate ?? this.paymentDate,
-    notes: notes.present ? notes.value : this.notes,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-  );
-  Payment copyWithCompanion(PaymentsCompanion data) {
-    return Payment(
-      id: data.id.present ? data.id.value : this.id,
-      kidCourseId: data.kidCourseId.present
-          ? data.kidCourseId.value
-          : this.kidCourseId,
-      packageId: data.packageId.present ? data.packageId.value : this.packageId,
-      type: data.type.present ? data.type.value : this.type,
-      typeNameSnapshot: data.typeNameSnapshot.present
-          ? data.typeNameSnapshot.value
-          : this.typeNameSnapshot,
-      amountCents: data.amountCents.present
-          ? data.amountCents.value
-          : this.amountCents,
-      paymentDate: data.paymentDate.present
-          ? data.paymentDate.value
-          : this.paymentDate,
-      notes: data.notes.present ? data.notes.value : this.notes,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('Payment(')
-          ..write('id: $id, ')
-          ..write('kidCourseId: $kidCourseId, ')
-          ..write('packageId: $packageId, ')
-          ..write('type: $type, ')
-          ..write('typeNameSnapshot: $typeNameSnapshot, ')
-          ..write('amountCents: $amountCents, ')
-          ..write('paymentDate: $paymentDate, ')
-          ..write('notes: $notes, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    kidCourseId,
-    packageId,
-    type,
-    typeNameSnapshot,
-    amountCents,
-    paymentDate,
-    notes,
-    createdAt,
-    updatedAt,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is Payment &&
-          other.id == this.id &&
-          other.kidCourseId == this.kidCourseId &&
-          other.packageId == this.packageId &&
-          other.type == this.type &&
-          other.typeNameSnapshot == this.typeNameSnapshot &&
-          other.amountCents == this.amountCents &&
-          other.paymentDate == this.paymentDate &&
-          other.notes == this.notes &&
-          other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
-}
-
-class PaymentsCompanion extends UpdateCompanion<Payment> {
-  final Value<int> id;
-  final Value<int> kidCourseId;
-  final Value<int?> packageId;
-  final Value<String?> type;
-  final Value<String?> typeNameSnapshot;
-  final Value<int> amountCents;
-  final Value<DateTime> paymentDate;
-  final Value<String?> notes;
-  final Value<DateTime> createdAt;
-  final Value<DateTime> updatedAt;
-  const PaymentsCompanion({
-    this.id = const Value.absent(),
-    this.kidCourseId = const Value.absent(),
-    this.packageId = const Value.absent(),
-    this.type = const Value.absent(),
-    this.typeNameSnapshot = const Value.absent(),
-    this.amountCents = const Value.absent(),
-    this.paymentDate = const Value.absent(),
-    this.notes = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-  });
-  PaymentsCompanion.insert({
-    this.id = const Value.absent(),
-    required int kidCourseId,
-    this.packageId = const Value.absent(),
-    this.type = const Value.absent(),
-    this.typeNameSnapshot = const Value.absent(),
-    required int amountCents,
-    required DateTime paymentDate,
-    this.notes = const Value.absent(),
-    required DateTime createdAt,
-    required DateTime updatedAt,
-  }) : kidCourseId = Value(kidCourseId),
-       amountCents = Value(amountCents),
-       paymentDate = Value(paymentDate),
-       createdAt = Value(createdAt),
-       updatedAt = Value(updatedAt);
-  static Insertable<Payment> custom({
-    Expression<int>? id,
-    Expression<int>? kidCourseId,
-    Expression<int>? packageId,
-    Expression<String>? type,
-    Expression<String>? typeNameSnapshot,
-    Expression<int>? amountCents,
-    Expression<DateTime>? paymentDate,
-    Expression<String>? notes,
-    Expression<DateTime>? createdAt,
-    Expression<DateTime>? updatedAt,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (kidCourseId != null) 'kid_course_id': kidCourseId,
-      if (packageId != null) 'package_id': packageId,
-      if (type != null) 'type': type,
-      if (typeNameSnapshot != null) 'type_name_snapshot': typeNameSnapshot,
-      if (amountCents != null) 'amount_cents': amountCents,
-      if (paymentDate != null) 'payment_date': paymentDate,
-      if (notes != null) 'notes': notes,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-    });
-  }
-
-  PaymentsCompanion copyWith({
-    Value<int>? id,
-    Value<int>? kidCourseId,
-    Value<int?>? packageId,
-    Value<String?>? type,
-    Value<String?>? typeNameSnapshot,
-    Value<int>? amountCents,
-    Value<DateTime>? paymentDate,
-    Value<String?>? notes,
-    Value<DateTime>? createdAt,
-    Value<DateTime>? updatedAt,
-  }) {
-    return PaymentsCompanion(
-      id: id ?? this.id,
-      kidCourseId: kidCourseId ?? this.kidCourseId,
-      packageId: packageId ?? this.packageId,
-      type: type ?? this.type,
-      typeNameSnapshot: typeNameSnapshot ?? this.typeNameSnapshot,
-      amountCents: amountCents ?? this.amountCents,
-      paymentDate: paymentDate ?? this.paymentDate,
-      notes: notes ?? this.notes,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (kidCourseId.present) {
-      map['kid_course_id'] = Variable<int>(kidCourseId.value);
-    }
-    if (packageId.present) {
-      map['package_id'] = Variable<int>(packageId.value);
-    }
-    if (type.present) {
-      map['type'] = Variable<String>(type.value);
-    }
-    if (typeNameSnapshot.present) {
-      map['type_name_snapshot'] = Variable<String>(typeNameSnapshot.value);
-    }
-    if (amountCents.present) {
-      map['amount_cents'] = Variable<int>(amountCents.value);
-    }
-    if (paymentDate.present) {
-      map['payment_date'] = Variable<DateTime>(paymentDate.value);
-    }
-    if (notes.present) {
-      map['notes'] = Variable<String>(notes.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<DateTime>(updatedAt.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('PaymentsCompanion(')
-          ..write('id: $id, ')
-          ..write('kidCourseId: $kidCourseId, ')
-          ..write('packageId: $packageId, ')
-          ..write('type: $type, ')
-          ..write('typeNameSnapshot: $typeNameSnapshot, ')
-          ..write('amountCents: $amountCents, ')
-          ..write('paymentDate: $paymentDate, ')
-          ..write('notes: $notes, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $AchievementsTable extends Achievements
     with TableInfo<$AchievementsTable, Achievement> {
   @override
@@ -6171,6 +5548,1113 @@ class AchievementsCompanion extends UpdateCompanion<Achievement> {
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PaymentsTable extends Payments with TableInfo<$PaymentsTable, Payment> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PaymentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _kidCourseIdMeta = const VerificationMeta(
+    'kidCourseId',
+  );
+  @override
+  late final GeneratedColumn<int> kidCourseId = GeneratedColumn<int>(
+    'kid_course_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES kid_courses (id)',
+    ),
+  );
+  static const VerificationMeta _packageIdMeta = const VerificationMeta(
+    'packageId',
+  );
+  @override
+  late final GeneratedColumn<int> packageId = GeneratedColumn<int>(
+    'package_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES packages (id)',
+    ),
+  );
+  static const VerificationMeta _achievementIdMeta = const VerificationMeta(
+    'achievementId',
+  );
+  @override
+  late final GeneratedColumn<int> achievementId = GeneratedColumn<int>(
+    'achievement_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES achievements (id)',
+    ),
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _typeNameSnapshotMeta = const VerificationMeta(
+    'typeNameSnapshot',
+  );
+  @override
+  late final GeneratedColumn<String> typeNameSnapshot = GeneratedColumn<String>(
+    'type_name_snapshot',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _amountCentsMeta = const VerificationMeta(
+    'amountCents',
+  );
+  @override
+  late final GeneratedColumn<int> amountCents = GeneratedColumn<int>(
+    'amount_cents',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _paymentDateMeta = const VerificationMeta(
+    'paymentDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> paymentDate = GeneratedColumn<DateTime>(
+    'payment_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    kidCourseId,
+    packageId,
+    achievementId,
+    type,
+    typeNameSnapshot,
+    amountCents,
+    paymentDate,
+    notes,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'payments';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Payment> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('kid_course_id')) {
+      context.handle(
+        _kidCourseIdMeta,
+        kidCourseId.isAcceptableOrUnknown(
+          data['kid_course_id']!,
+          _kidCourseIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_kidCourseIdMeta);
+    }
+    if (data.containsKey('package_id')) {
+      context.handle(
+        _packageIdMeta,
+        packageId.isAcceptableOrUnknown(data['package_id']!, _packageIdMeta),
+      );
+    }
+    if (data.containsKey('achievement_id')) {
+      context.handle(
+        _achievementIdMeta,
+        achievementId.isAcceptableOrUnknown(
+          data['achievement_id']!,
+          _achievementIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    }
+    if (data.containsKey('type_name_snapshot')) {
+      context.handle(
+        _typeNameSnapshotMeta,
+        typeNameSnapshot.isAcceptableOrUnknown(
+          data['type_name_snapshot']!,
+          _typeNameSnapshotMeta,
+        ),
+      );
+    }
+    if (data.containsKey('amount_cents')) {
+      context.handle(
+        _amountCentsMeta,
+        amountCents.isAcceptableOrUnknown(
+          data['amount_cents']!,
+          _amountCentsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_amountCentsMeta);
+    }
+    if (data.containsKey('payment_date')) {
+      context.handle(
+        _paymentDateMeta,
+        paymentDate.isAcceptableOrUnknown(
+          data['payment_date']!,
+          _paymentDateMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_paymentDateMeta);
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Payment map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Payment(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      kidCourseId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}kid_course_id'],
+      )!,
+      packageId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}package_id'],
+      ),
+      achievementId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}achievement_id'],
+      ),
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      ),
+      typeNameSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type_name_snapshot'],
+      ),
+      amountCents: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_cents'],
+      )!,
+      paymentDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}payment_date'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PaymentsTable createAlias(String alias) {
+    return $PaymentsTable(attachedDatabase, alias);
+  }
+}
+
+class Payment extends DataClass implements Insertable<Payment> {
+  final int id;
+  final int kidCourseId;
+  final int? packageId;
+  final int? achievementId;
+  final String? type;
+  final String? typeNameSnapshot;
+  final int amountCents;
+  final DateTime paymentDate;
+  final String? notes;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const Payment({
+    required this.id,
+    required this.kidCourseId,
+    this.packageId,
+    this.achievementId,
+    this.type,
+    this.typeNameSnapshot,
+    required this.amountCents,
+    required this.paymentDate,
+    this.notes,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['kid_course_id'] = Variable<int>(kidCourseId);
+    if (!nullToAbsent || packageId != null) {
+      map['package_id'] = Variable<int>(packageId);
+    }
+    if (!nullToAbsent || achievementId != null) {
+      map['achievement_id'] = Variable<int>(achievementId);
+    }
+    if (!nullToAbsent || type != null) {
+      map['type'] = Variable<String>(type);
+    }
+    if (!nullToAbsent || typeNameSnapshot != null) {
+      map['type_name_snapshot'] = Variable<String>(typeNameSnapshot);
+    }
+    map['amount_cents'] = Variable<int>(amountCents);
+    map['payment_date'] = Variable<DateTime>(paymentDate);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  PaymentsCompanion toCompanion(bool nullToAbsent) {
+    return PaymentsCompanion(
+      id: Value(id),
+      kidCourseId: Value(kidCourseId),
+      packageId: packageId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(packageId),
+      achievementId: achievementId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(achievementId),
+      type: type == null && nullToAbsent ? const Value.absent() : Value(type),
+      typeNameSnapshot: typeNameSnapshot == null && nullToAbsent
+          ? const Value.absent()
+          : Value(typeNameSnapshot),
+      amountCents: Value(amountCents),
+      paymentDate: Value(paymentDate),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory Payment.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Payment(
+      id: serializer.fromJson<int>(json['id']),
+      kidCourseId: serializer.fromJson<int>(json['kidCourseId']),
+      packageId: serializer.fromJson<int?>(json['packageId']),
+      achievementId: serializer.fromJson<int?>(json['achievementId']),
+      type: serializer.fromJson<String?>(json['type']),
+      typeNameSnapshot: serializer.fromJson<String?>(json['typeNameSnapshot']),
+      amountCents: serializer.fromJson<int>(json['amountCents']),
+      paymentDate: serializer.fromJson<DateTime>(json['paymentDate']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'kidCourseId': serializer.toJson<int>(kidCourseId),
+      'packageId': serializer.toJson<int?>(packageId),
+      'achievementId': serializer.toJson<int?>(achievementId),
+      'type': serializer.toJson<String?>(type),
+      'typeNameSnapshot': serializer.toJson<String?>(typeNameSnapshot),
+      'amountCents': serializer.toJson<int>(amountCents),
+      'paymentDate': serializer.toJson<DateTime>(paymentDate),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  Payment copyWith({
+    int? id,
+    int? kidCourseId,
+    Value<int?> packageId = const Value.absent(),
+    Value<int?> achievementId = const Value.absent(),
+    Value<String?> type = const Value.absent(),
+    Value<String?> typeNameSnapshot = const Value.absent(),
+    int? amountCents,
+    DateTime? paymentDate,
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => Payment(
+    id: id ?? this.id,
+    kidCourseId: kidCourseId ?? this.kidCourseId,
+    packageId: packageId.present ? packageId.value : this.packageId,
+    achievementId: achievementId.present
+        ? achievementId.value
+        : this.achievementId,
+    type: type.present ? type.value : this.type,
+    typeNameSnapshot: typeNameSnapshot.present
+        ? typeNameSnapshot.value
+        : this.typeNameSnapshot,
+    amountCents: amountCents ?? this.amountCents,
+    paymentDate: paymentDate ?? this.paymentDate,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  Payment copyWithCompanion(PaymentsCompanion data) {
+    return Payment(
+      id: data.id.present ? data.id.value : this.id,
+      kidCourseId: data.kidCourseId.present
+          ? data.kidCourseId.value
+          : this.kidCourseId,
+      packageId: data.packageId.present ? data.packageId.value : this.packageId,
+      achievementId: data.achievementId.present
+          ? data.achievementId.value
+          : this.achievementId,
+      type: data.type.present ? data.type.value : this.type,
+      typeNameSnapshot: data.typeNameSnapshot.present
+          ? data.typeNameSnapshot.value
+          : this.typeNameSnapshot,
+      amountCents: data.amountCents.present
+          ? data.amountCents.value
+          : this.amountCents,
+      paymentDate: data.paymentDate.present
+          ? data.paymentDate.value
+          : this.paymentDate,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Payment(')
+          ..write('id: $id, ')
+          ..write('kidCourseId: $kidCourseId, ')
+          ..write('packageId: $packageId, ')
+          ..write('achievementId: $achievementId, ')
+          ..write('type: $type, ')
+          ..write('typeNameSnapshot: $typeNameSnapshot, ')
+          ..write('amountCents: $amountCents, ')
+          ..write('paymentDate: $paymentDate, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    kidCourseId,
+    packageId,
+    achievementId,
+    type,
+    typeNameSnapshot,
+    amountCents,
+    paymentDate,
+    notes,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Payment &&
+          other.id == this.id &&
+          other.kidCourseId == this.kidCourseId &&
+          other.packageId == this.packageId &&
+          other.achievementId == this.achievementId &&
+          other.type == this.type &&
+          other.typeNameSnapshot == this.typeNameSnapshot &&
+          other.amountCents == this.amountCents &&
+          other.paymentDate == this.paymentDate &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class PaymentsCompanion extends UpdateCompanion<Payment> {
+  final Value<int> id;
+  final Value<int> kidCourseId;
+  final Value<int?> packageId;
+  final Value<int?> achievementId;
+  final Value<String?> type;
+  final Value<String?> typeNameSnapshot;
+  final Value<int> amountCents;
+  final Value<DateTime> paymentDate;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const PaymentsCompanion({
+    this.id = const Value.absent(),
+    this.kidCourseId = const Value.absent(),
+    this.packageId = const Value.absent(),
+    this.achievementId = const Value.absent(),
+    this.type = const Value.absent(),
+    this.typeNameSnapshot = const Value.absent(),
+    this.amountCents = const Value.absent(),
+    this.paymentDate = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  PaymentsCompanion.insert({
+    this.id = const Value.absent(),
+    required int kidCourseId,
+    this.packageId = const Value.absent(),
+    this.achievementId = const Value.absent(),
+    this.type = const Value.absent(),
+    this.typeNameSnapshot = const Value.absent(),
+    required int amountCents,
+    required DateTime paymentDate,
+    this.notes = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+  }) : kidCourseId = Value(kidCourseId),
+       amountCents = Value(amountCents),
+       paymentDate = Value(paymentDate),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<Payment> custom({
+    Expression<int>? id,
+    Expression<int>? kidCourseId,
+    Expression<int>? packageId,
+    Expression<int>? achievementId,
+    Expression<String>? type,
+    Expression<String>? typeNameSnapshot,
+    Expression<int>? amountCents,
+    Expression<DateTime>? paymentDate,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (kidCourseId != null) 'kid_course_id': kidCourseId,
+      if (packageId != null) 'package_id': packageId,
+      if (achievementId != null) 'achievement_id': achievementId,
+      if (type != null) 'type': type,
+      if (typeNameSnapshot != null) 'type_name_snapshot': typeNameSnapshot,
+      if (amountCents != null) 'amount_cents': amountCents,
+      if (paymentDate != null) 'payment_date': paymentDate,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  PaymentsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? kidCourseId,
+    Value<int?>? packageId,
+    Value<int?>? achievementId,
+    Value<String?>? type,
+    Value<String?>? typeNameSnapshot,
+    Value<int>? amountCents,
+    Value<DateTime>? paymentDate,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+  }) {
+    return PaymentsCompanion(
+      id: id ?? this.id,
+      kidCourseId: kidCourseId ?? this.kidCourseId,
+      packageId: packageId ?? this.packageId,
+      achievementId: achievementId ?? this.achievementId,
+      type: type ?? this.type,
+      typeNameSnapshot: typeNameSnapshot ?? this.typeNameSnapshot,
+      amountCents: amountCents ?? this.amountCents,
+      paymentDate: paymentDate ?? this.paymentDate,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (kidCourseId.present) {
+      map['kid_course_id'] = Variable<int>(kidCourseId.value);
+    }
+    if (packageId.present) {
+      map['package_id'] = Variable<int>(packageId.value);
+    }
+    if (achievementId.present) {
+      map['achievement_id'] = Variable<int>(achievementId.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (typeNameSnapshot.present) {
+      map['type_name_snapshot'] = Variable<String>(typeNameSnapshot.value);
+    }
+    if (amountCents.present) {
+      map['amount_cents'] = Variable<int>(amountCents.value);
+    }
+    if (paymentDate.present) {
+      map['payment_date'] = Variable<DateTime>(paymentDate.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PaymentsCompanion(')
+          ..write('id: $id, ')
+          ..write('kidCourseId: $kidCourseId, ')
+          ..write('packageId: $packageId, ')
+          ..write('achievementId: $achievementId, ')
+          ..write('type: $type, ')
+          ..write('typeNameSnapshot: $typeNameSnapshot, ')
+          ..write('amountCents: $amountCents, ')
+          ..write('paymentDate: $paymentDate, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AchievementTypeLinksTable extends AchievementTypeLinks
+    with TableInfo<$AchievementTypeLinksTable, AchievementTypeLink> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AchievementTypeLinksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _achievementIdMeta = const VerificationMeta(
+    'achievementId',
+  );
+  @override
+  late final GeneratedColumn<int> achievementId = GeneratedColumn<int>(
+    'achievement_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES achievements (id)',
+    ),
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 50,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typeNameSnapshotMeta = const VerificationMeta(
+    'typeNameSnapshot',
+  );
+  @override
+  late final GeneratedColumn<String> typeNameSnapshot = GeneratedColumn<String>(
+    'type_name_snapshot',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    achievementId,
+    type,
+    typeNameSnapshot,
+    sortOrder,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'achievement_type_links';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AchievementTypeLink> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('achievement_id')) {
+      context.handle(
+        _achievementIdMeta,
+        achievementId.isAcceptableOrUnknown(
+          data['achievement_id']!,
+          _achievementIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_achievementIdMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('type_name_snapshot')) {
+      context.handle(
+        _typeNameSnapshotMeta,
+        typeNameSnapshot.isAcceptableOrUnknown(
+          data['type_name_snapshot']!,
+          _typeNameSnapshotMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_typeNameSnapshotMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {achievementId, type},
+  ];
+  @override
+  AchievementTypeLink map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AchievementTypeLink(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      achievementId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}achievement_id'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      typeNameSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type_name_snapshot'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $AchievementTypeLinksTable createAlias(String alias) {
+    return $AchievementTypeLinksTable(attachedDatabase, alias);
+  }
+}
+
+class AchievementTypeLink extends DataClass
+    implements Insertable<AchievementTypeLink> {
+  final int id;
+  final int achievementId;
+  final String type;
+  final String typeNameSnapshot;
+  final int sortOrder;
+  final DateTime createdAt;
+  const AchievementTypeLink({
+    required this.id,
+    required this.achievementId,
+    required this.type,
+    required this.typeNameSnapshot,
+    required this.sortOrder,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['achievement_id'] = Variable<int>(achievementId);
+    map['type'] = Variable<String>(type);
+    map['type_name_snapshot'] = Variable<String>(typeNameSnapshot);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  AchievementTypeLinksCompanion toCompanion(bool nullToAbsent) {
+    return AchievementTypeLinksCompanion(
+      id: Value(id),
+      achievementId: Value(achievementId),
+      type: Value(type),
+      typeNameSnapshot: Value(typeNameSnapshot),
+      sortOrder: Value(sortOrder),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory AchievementTypeLink.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AchievementTypeLink(
+      id: serializer.fromJson<int>(json['id']),
+      achievementId: serializer.fromJson<int>(json['achievementId']),
+      type: serializer.fromJson<String>(json['type']),
+      typeNameSnapshot: serializer.fromJson<String>(json['typeNameSnapshot']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'achievementId': serializer.toJson<int>(achievementId),
+      'type': serializer.toJson<String>(type),
+      'typeNameSnapshot': serializer.toJson<String>(typeNameSnapshot),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  AchievementTypeLink copyWith({
+    int? id,
+    int? achievementId,
+    String? type,
+    String? typeNameSnapshot,
+    int? sortOrder,
+    DateTime? createdAt,
+  }) => AchievementTypeLink(
+    id: id ?? this.id,
+    achievementId: achievementId ?? this.achievementId,
+    type: type ?? this.type,
+    typeNameSnapshot: typeNameSnapshot ?? this.typeNameSnapshot,
+    sortOrder: sortOrder ?? this.sortOrder,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  AchievementTypeLink copyWithCompanion(AchievementTypeLinksCompanion data) {
+    return AchievementTypeLink(
+      id: data.id.present ? data.id.value : this.id,
+      achievementId: data.achievementId.present
+          ? data.achievementId.value
+          : this.achievementId,
+      type: data.type.present ? data.type.value : this.type,
+      typeNameSnapshot: data.typeNameSnapshot.present
+          ? data.typeNameSnapshot.value
+          : this.typeNameSnapshot,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AchievementTypeLink(')
+          ..write('id: $id, ')
+          ..write('achievementId: $achievementId, ')
+          ..write('type: $type, ')
+          ..write('typeNameSnapshot: $typeNameSnapshot, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    achievementId,
+    type,
+    typeNameSnapshot,
+    sortOrder,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AchievementTypeLink &&
+          other.id == this.id &&
+          other.achievementId == this.achievementId &&
+          other.type == this.type &&
+          other.typeNameSnapshot == this.typeNameSnapshot &&
+          other.sortOrder == this.sortOrder &&
+          other.createdAt == this.createdAt);
+}
+
+class AchievementTypeLinksCompanion
+    extends UpdateCompanion<AchievementTypeLink> {
+  final Value<int> id;
+  final Value<int> achievementId;
+  final Value<String> type;
+  final Value<String> typeNameSnapshot;
+  final Value<int> sortOrder;
+  final Value<DateTime> createdAt;
+  const AchievementTypeLinksCompanion({
+    this.id = const Value.absent(),
+    this.achievementId = const Value.absent(),
+    this.type = const Value.absent(),
+    this.typeNameSnapshot = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  AchievementTypeLinksCompanion.insert({
+    this.id = const Value.absent(),
+    required int achievementId,
+    required String type,
+    required String typeNameSnapshot,
+    this.sortOrder = const Value.absent(),
+    required DateTime createdAt,
+  }) : achievementId = Value(achievementId),
+       type = Value(type),
+       typeNameSnapshot = Value(typeNameSnapshot),
+       createdAt = Value(createdAt);
+  static Insertable<AchievementTypeLink> custom({
+    Expression<int>? id,
+    Expression<int>? achievementId,
+    Expression<String>? type,
+    Expression<String>? typeNameSnapshot,
+    Expression<int>? sortOrder,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (achievementId != null) 'achievement_id': achievementId,
+      if (type != null) 'type': type,
+      if (typeNameSnapshot != null) 'type_name_snapshot': typeNameSnapshot,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  AchievementTypeLinksCompanion copyWith({
+    Value<int>? id,
+    Value<int>? achievementId,
+    Value<String>? type,
+    Value<String>? typeNameSnapshot,
+    Value<int>? sortOrder,
+    Value<DateTime>? createdAt,
+  }) {
+    return AchievementTypeLinksCompanion(
+      id: id ?? this.id,
+      achievementId: achievementId ?? this.achievementId,
+      type: type ?? this.type,
+      typeNameSnapshot: typeNameSnapshot ?? this.typeNameSnapshot,
+      sortOrder: sortOrder ?? this.sortOrder,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (achievementId.present) {
+      map['achievement_id'] = Variable<int>(achievementId.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (typeNameSnapshot.present) {
+      map['type_name_snapshot'] = Variable<String>(typeNameSnapshot.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AchievementTypeLinksCompanion(')
+          ..write('id: $id, ')
+          ..write('achievementId: $achievementId, ')
+          ..write('type: $type, ')
+          ..write('typeNameSnapshot: $typeNameSnapshot, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
@@ -8703,8 +9187,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ClassRecordsTable classRecords = $ClassRecordsTable(this);
   late final $CreditTransactionsTable creditTransactions =
       $CreditTransactionsTable(this);
-  late final $PaymentsTable payments = $PaymentsTable(this);
   late final $AchievementsTable achievements = $AchievementsTable(this);
+  late final $PaymentsTable payments = $PaymentsTable(this);
+  late final $AchievementTypeLinksTable achievementTypeLinks =
+      $AchievementTypeLinksTable(this);
   late final $AttachmentsTable attachments = $AttachmentsTable(this);
   late final $ContactsTable contacts = $ContactsTable(this);
   late final $TagsTable tags = $TagsTable(this);
@@ -8722,8 +9208,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     packages,
     classRecords,
     creditTransactions,
-    payments,
     achievements,
+    payments,
+    achievementTypeLinks,
     attachments,
     contacts,
     tags,
@@ -9342,25 +9829,6 @@ final class $$KidCoursesTableReferences
     );
   }
 
-  static MultiTypedResultKey<$PaymentsTable, List<Payment>> _paymentsRefsTable(
-    _$AppDatabase db,
-  ) => MultiTypedResultKey.fromTable(
-    db.payments,
-    aliasName: $_aliasNameGenerator(db.kidCourses.id, db.payments.kidCourseId),
-  );
-
-  $$PaymentsTableProcessedTableManager get paymentsRefs {
-    final manager = $$PaymentsTableTableManager(
-      $_db,
-      $_db.payments,
-    ).filter((f) => f.kidCourseId.id.sqlEquals($_itemColumn<int>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(_paymentsRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
   static MultiTypedResultKey<$AchievementsTable, List<Achievement>>
   _achievementsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.achievements,
@@ -9377,6 +9845,25 @@ final class $$KidCoursesTableReferences
     ).filter((f) => f.kidCourseId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_achievementsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$PaymentsTable, List<Payment>> _paymentsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.payments,
+    aliasName: $_aliasNameGenerator(db.kidCourses.id, db.payments.kidCourseId),
+  );
+
+  $$PaymentsTableProcessedTableManager get paymentsRefs {
+    final manager = $$PaymentsTableTableManager(
+      $_db,
+      $_db.payments,
+    ).filter((f) => f.kidCourseId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_paymentsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -9594,31 +10081,6 @@ class $$KidCoursesTableFilterComposer
     return f(composer);
   }
 
-  Expression<bool> paymentsRefs(
-    Expression<bool> Function($$PaymentsTableFilterComposer f) f,
-  ) {
-    final $$PaymentsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.payments,
-      getReferencedColumn: (t) => t.kidCourseId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PaymentsTableFilterComposer(
-            $db: $db,
-            $table: $db.payments,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
   Expression<bool> achievementsRefs(
     Expression<bool> Function($$AchievementsTableFilterComposer f) f,
   ) {
@@ -9635,6 +10097,31 @@ class $$KidCoursesTableFilterComposer
           }) => $$AchievementsTableFilterComposer(
             $db: $db,
             $table: $db.achievements,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> paymentsRefs(
+    Expression<bool> Function($$PaymentsTableFilterComposer f) f,
+  ) {
+    final $$PaymentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.payments,
+      getReferencedColumn: (t) => t.kidCourseId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PaymentsTableFilterComposer(
+            $db: $db,
+            $table: $db.payments,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -9942,31 +10429,6 @@ class $$KidCoursesTableAnnotationComposer
     return f(composer);
   }
 
-  Expression<T> paymentsRefs<T extends Object>(
-    Expression<T> Function($$PaymentsTableAnnotationComposer a) f,
-  ) {
-    final $$PaymentsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.payments,
-      getReferencedColumn: (t) => t.kidCourseId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PaymentsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.payments,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
   Expression<T> achievementsRefs<T extends Object>(
     Expression<T> Function($$AchievementsTableAnnotationComposer a) f,
   ) {
@@ -9983,6 +10445,31 @@ class $$KidCoursesTableAnnotationComposer
           }) => $$AchievementsTableAnnotationComposer(
             $db: $db,
             $table: $db.achievements,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> paymentsRefs<T extends Object>(
+    Expression<T> Function($$PaymentsTableAnnotationComposer a) f,
+  ) {
+    final $$PaymentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.payments,
+      getReferencedColumn: (t) => t.kidCourseId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PaymentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.payments,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -10037,8 +10524,8 @@ class $$KidCoursesTableTableManager
             bool packagesRefs,
             bool classRecordsRefs,
             bool creditTransactionsRefs,
-            bool paymentsRefs,
             bool achievementsRefs,
+            bool paymentsRefs,
             bool contactsRefs,
           })
         > {
@@ -10128,8 +10615,8 @@ class $$KidCoursesTableTableManager
                 packagesRefs = false,
                 classRecordsRefs = false,
                 creditTransactionsRefs = false,
-                paymentsRefs = false,
                 achievementsRefs = false,
+                paymentsRefs = false,
                 contactsRefs = false,
               }) {
                 return PrefetchHooks(
@@ -10139,8 +10626,8 @@ class $$KidCoursesTableTableManager
                     if (packagesRefs) db.packages,
                     if (classRecordsRefs) db.classRecords,
                     if (creditTransactionsRefs) db.creditTransactions,
-                    if (paymentsRefs) db.payments,
                     if (achievementsRefs) db.achievements,
+                    if (paymentsRefs) db.payments,
                     if (contactsRefs) db.contacts,
                   ],
                   addJoins:
@@ -10262,27 +10749,6 @@ class $$KidCoursesTableTableManager
                               ),
                           typedResults: items,
                         ),
-                      if (paymentsRefs)
-                        await $_getPrefetchedData<
-                          KidCourse,
-                          $KidCoursesTable,
-                          Payment
-                        >(
-                          currentTable: table,
-                          referencedTable: $$KidCoursesTableReferences
-                              ._paymentsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$KidCoursesTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).paymentsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.kidCourseId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
                       if (achievementsRefs)
                         await $_getPrefetchedData<
                           KidCourse,
@@ -10298,6 +10764,27 @@ class $$KidCoursesTableTableManager
                                 table,
                                 p0,
                               ).achievementsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.kidCourseId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (paymentsRefs)
+                        await $_getPrefetchedData<
+                          KidCourse,
+                          $KidCoursesTable,
+                          Payment
+                        >(
+                          currentTable: table,
+                          referencedTable: $$KidCoursesTableReferences
+                              ._paymentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$KidCoursesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).paymentsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.kidCourseId == item.id,
@@ -10351,8 +10838,8 @@ typedef $$KidCoursesTableProcessedTableManager =
         bool packagesRefs,
         bool classRecordsRefs,
         bool creditTransactionsRefs,
-        bool paymentsRefs,
         bool achievementsRefs,
+        bool paymentsRefs,
         bool contactsRefs,
       })
     >;
@@ -13296,506 +13783,6 @@ typedef $$CreditTransactionsTableProcessedTableManager =
         bool classRecordId,
       })
     >;
-typedef $$PaymentsTableCreateCompanionBuilder =
-    PaymentsCompanion Function({
-      Value<int> id,
-      required int kidCourseId,
-      Value<int?> packageId,
-      Value<String?> type,
-      Value<String?> typeNameSnapshot,
-      required int amountCents,
-      required DateTime paymentDate,
-      Value<String?> notes,
-      required DateTime createdAt,
-      required DateTime updatedAt,
-    });
-typedef $$PaymentsTableUpdateCompanionBuilder =
-    PaymentsCompanion Function({
-      Value<int> id,
-      Value<int> kidCourseId,
-      Value<int?> packageId,
-      Value<String?> type,
-      Value<String?> typeNameSnapshot,
-      Value<int> amountCents,
-      Value<DateTime> paymentDate,
-      Value<String?> notes,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-    });
-
-final class $$PaymentsTableReferences
-    extends BaseReferences<_$AppDatabase, $PaymentsTable, Payment> {
-  $$PaymentsTableReferences(super.$_db, super.$_table, super.$_typedResult);
-
-  static $KidCoursesTable _kidCourseIdTable(_$AppDatabase db) =>
-      db.kidCourses.createAlias(
-        $_aliasNameGenerator(db.payments.kidCourseId, db.kidCourses.id),
-      );
-
-  $$KidCoursesTableProcessedTableManager get kidCourseId {
-    final $_column = $_itemColumn<int>('kid_course_id')!;
-
-    final manager = $$KidCoursesTableTableManager(
-      $_db,
-      $_db.kidCourses,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_kidCourseIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static $PackagesTable _packageIdTable(_$AppDatabase db) => db.packages
-      .createAlias($_aliasNameGenerator(db.payments.packageId, db.packages.id));
-
-  $$PackagesTableProcessedTableManager? get packageId {
-    final $_column = $_itemColumn<int>('package_id');
-    if ($_column == null) return null;
-    final manager = $$PackagesTableTableManager(
-      $_db,
-      $_db.packages,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_packageIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-}
-
-class $$PaymentsTableFilterComposer
-    extends Composer<_$AppDatabase, $PaymentsTable> {
-  $$PaymentsTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get type => $composableBuilder(
-    column: $table.type,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get typeNameSnapshot => $composableBuilder(
-    column: $table.typeNameSnapshot,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get amountCents => $composableBuilder(
-    column: $table.amountCents,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get paymentDate => $composableBuilder(
-    column: $table.paymentDate,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get notes => $composableBuilder(
-    column: $table.notes,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  $$KidCoursesTableFilterComposer get kidCourseId {
-    final $$KidCoursesTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.kidCourseId,
-      referencedTable: $db.kidCourses,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$KidCoursesTableFilterComposer(
-            $db: $db,
-            $table: $db.kidCourses,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$PackagesTableFilterComposer get packageId {
-    final $$PackagesTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.packageId,
-      referencedTable: $db.packages,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PackagesTableFilterComposer(
-            $db: $db,
-            $table: $db.packages,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$PaymentsTableOrderingComposer
-    extends Composer<_$AppDatabase, $PaymentsTable> {
-  $$PaymentsTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get type => $composableBuilder(
-    column: $table.type,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get typeNameSnapshot => $composableBuilder(
-    column: $table.typeNameSnapshot,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get amountCents => $composableBuilder(
-    column: $table.amountCents,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get paymentDate => $composableBuilder(
-    column: $table.paymentDate,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get notes => $composableBuilder(
-    column: $table.notes,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$KidCoursesTableOrderingComposer get kidCourseId {
-    final $$KidCoursesTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.kidCourseId,
-      referencedTable: $db.kidCourses,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$KidCoursesTableOrderingComposer(
-            $db: $db,
-            $table: $db.kidCourses,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$PackagesTableOrderingComposer get packageId {
-    final $$PackagesTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.packageId,
-      referencedTable: $db.packages,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PackagesTableOrderingComposer(
-            $db: $db,
-            $table: $db.packages,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$PaymentsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $PaymentsTable> {
-  $$PaymentsTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get type =>
-      $composableBuilder(column: $table.type, builder: (column) => column);
-
-  GeneratedColumn<String> get typeNameSnapshot => $composableBuilder(
-    column: $table.typeNameSnapshot,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<int> get amountCents => $composableBuilder(
-    column: $table.amountCents,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<DateTime> get paymentDate => $composableBuilder(
-    column: $table.paymentDate,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get notes =>
-      $composableBuilder(column: $table.notes, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-
-  $$KidCoursesTableAnnotationComposer get kidCourseId {
-    final $$KidCoursesTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.kidCourseId,
-      referencedTable: $db.kidCourses,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$KidCoursesTableAnnotationComposer(
-            $db: $db,
-            $table: $db.kidCourses,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$PackagesTableAnnotationComposer get packageId {
-    final $$PackagesTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.packageId,
-      referencedTable: $db.packages,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PackagesTableAnnotationComposer(
-            $db: $db,
-            $table: $db.packages,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$PaymentsTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $PaymentsTable,
-          Payment,
-          $$PaymentsTableFilterComposer,
-          $$PaymentsTableOrderingComposer,
-          $$PaymentsTableAnnotationComposer,
-          $$PaymentsTableCreateCompanionBuilder,
-          $$PaymentsTableUpdateCompanionBuilder,
-          (Payment, $$PaymentsTableReferences),
-          Payment,
-          PrefetchHooks Function({bool kidCourseId, bool packageId})
-        > {
-  $$PaymentsTableTableManager(_$AppDatabase db, $PaymentsTable table)
-    : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$PaymentsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$PaymentsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$PaymentsTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<int> kidCourseId = const Value.absent(),
-                Value<int?> packageId = const Value.absent(),
-                Value<String?> type = const Value.absent(),
-                Value<String?> typeNameSnapshot = const Value.absent(),
-                Value<int> amountCents = const Value.absent(),
-                Value<DateTime> paymentDate = const Value.absent(),
-                Value<String?> notes = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-              }) => PaymentsCompanion(
-                id: id,
-                kidCourseId: kidCourseId,
-                packageId: packageId,
-                type: type,
-                typeNameSnapshot: typeNameSnapshot,
-                amountCents: amountCents,
-                paymentDate: paymentDate,
-                notes: notes,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required int kidCourseId,
-                Value<int?> packageId = const Value.absent(),
-                Value<String?> type = const Value.absent(),
-                Value<String?> typeNameSnapshot = const Value.absent(),
-                required int amountCents,
-                required DateTime paymentDate,
-                Value<String?> notes = const Value.absent(),
-                required DateTime createdAt,
-                required DateTime updatedAt,
-              }) => PaymentsCompanion.insert(
-                id: id,
-                kidCourseId: kidCourseId,
-                packageId: packageId,
-                type: type,
-                typeNameSnapshot: typeNameSnapshot,
-                amountCents: amountCents,
-                paymentDate: paymentDate,
-                notes: notes,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable(table),
-                  $$PaymentsTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback: ({kidCourseId = false, packageId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (kidCourseId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.kidCourseId,
-                                referencedTable: $$PaymentsTableReferences
-                                    ._kidCourseIdTable(db),
-                                referencedColumn: $$PaymentsTableReferences
-                                    ._kidCourseIdTable(db)
-                                    .id,
-                              )
-                              as T;
-                    }
-                    if (packageId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.packageId,
-                                referencedTable: $$PaymentsTableReferences
-                                    ._packageIdTable(db),
-                                referencedColumn: $$PaymentsTableReferences
-                                    ._packageIdTable(db)
-                                    .id,
-                              )
-                              as T;
-                    }
-
-                    return state;
-                  },
-              getPrefetchedDataCallback: (items) async {
-                return [];
-              },
-            );
-          },
-        ),
-      );
-}
-
-typedef $$PaymentsTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $PaymentsTable,
-      Payment,
-      $$PaymentsTableFilterComposer,
-      $$PaymentsTableOrderingComposer,
-      $$PaymentsTableAnnotationComposer,
-      $$PaymentsTableCreateCompanionBuilder,
-      $$PaymentsTableUpdateCompanionBuilder,
-      (Payment, $$PaymentsTableReferences),
-      Payment,
-      PrefetchHooks Function({bool kidCourseId, bool packageId})
-    >;
 typedef $$AchievementsTableCreateCompanionBuilder =
     AchievementsCompanion Function({
       Value<int> id,
@@ -13864,6 +13851,56 @@ final class $$AchievementsTableReferences
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$PaymentsTable, List<Payment>> _paymentsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.payments,
+    aliasName: $_aliasNameGenerator(
+      db.achievements.id,
+      db.payments.achievementId,
+    ),
+  );
+
+  $$PaymentsTableProcessedTableManager get paymentsRefs {
+    final manager = $$PaymentsTableTableManager(
+      $_db,
+      $_db.payments,
+    ).filter((f) => f.achievementId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_paymentsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $AchievementTypeLinksTable,
+    List<AchievementTypeLink>
+  >
+  _achievementTypeLinksRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.achievementTypeLinks,
+        aliasName: $_aliasNameGenerator(
+          db.achievements.id,
+          db.achievementTypeLinks.achievementId,
+        ),
+      );
+
+  $$AchievementTypeLinksTableProcessedTableManager
+  get achievementTypeLinksRefs {
+    final manager = $$AchievementTypeLinksTableTableManager(
+      $_db,
+      $_db.achievementTypeLinks,
+    ).filter((f) => f.achievementId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _achievementTypeLinksRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
     );
   }
 }
@@ -13966,6 +14003,56 @@ class $$AchievementsTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> paymentsRefs(
+    Expression<bool> Function($$PaymentsTableFilterComposer f) f,
+  ) {
+    final $$PaymentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.payments,
+      getReferencedColumn: (t) => t.achievementId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PaymentsTableFilterComposer(
+            $db: $db,
+            $table: $db.payments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> achievementTypeLinksRefs(
+    Expression<bool> Function($$AchievementTypeLinksTableFilterComposer f) f,
+  ) {
+    final $$AchievementTypeLinksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.achievementTypeLinks,
+      getReferencedColumn: (t) => t.achievementId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AchievementTypeLinksTableFilterComposer(
+            $db: $db,
+            $table: $db.achievementTypeLinks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 }
 
@@ -14157,6 +14244,57 @@ class $$AchievementsTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> paymentsRefs<T extends Object>(
+    Expression<T> Function($$PaymentsTableAnnotationComposer a) f,
+  ) {
+    final $$PaymentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.payments,
+      getReferencedColumn: (t) => t.achievementId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PaymentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.payments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> achievementTypeLinksRefs<T extends Object>(
+    Expression<T> Function($$AchievementTypeLinksTableAnnotationComposer a) f,
+  ) {
+    final $$AchievementTypeLinksTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.achievementTypeLinks,
+          getReferencedColumn: (t) => t.achievementId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$AchievementTypeLinksTableAnnotationComposer(
+                $db: $db,
+                $table: $db.achievementTypeLinks,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$AchievementsTableTableManager
@@ -14172,7 +14310,12 @@ class $$AchievementsTableTableManager
           $$AchievementsTableUpdateCompanionBuilder,
           (Achievement, $$AchievementsTableReferences),
           Achievement,
-          PrefetchHooks Function({bool childId, bool kidCourseId})
+          PrefetchHooks Function({
+            bool childId,
+            bool kidCourseId,
+            bool paymentsRefs,
+            bool achievementTypeLinksRefs,
+          })
         > {
   $$AchievementsTableTableManager(_$AppDatabase db, $AchievementsTable table)
     : super(
@@ -14245,7 +14388,1055 @@ class $$AchievementsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({childId = false, kidCourseId = false}) {
+          prefetchHooksCallback:
+              ({
+                childId = false,
+                kidCourseId = false,
+                paymentsRefs = false,
+                achievementTypeLinksRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (paymentsRefs) db.payments,
+                    if (achievementTypeLinksRefs) db.achievementTypeLinks,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (childId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.childId,
+                                    referencedTable:
+                                        $$AchievementsTableReferences
+                                            ._childIdTable(db),
+                                    referencedColumn:
+                                        $$AchievementsTableReferences
+                                            ._childIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (kidCourseId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.kidCourseId,
+                                    referencedTable:
+                                        $$AchievementsTableReferences
+                                            ._kidCourseIdTable(db),
+                                    referencedColumn:
+                                        $$AchievementsTableReferences
+                                            ._kidCourseIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (paymentsRefs)
+                        await $_getPrefetchedData<
+                          Achievement,
+                          $AchievementsTable,
+                          Payment
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AchievementsTableReferences
+                              ._paymentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AchievementsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).paymentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.achievementId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (achievementTypeLinksRefs)
+                        await $_getPrefetchedData<
+                          Achievement,
+                          $AchievementsTable,
+                          AchievementTypeLink
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AchievementsTableReferences
+                              ._achievementTypeLinksRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AchievementsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).achievementTypeLinksRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.achievementId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$AchievementsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AchievementsTable,
+      Achievement,
+      $$AchievementsTableFilterComposer,
+      $$AchievementsTableOrderingComposer,
+      $$AchievementsTableAnnotationComposer,
+      $$AchievementsTableCreateCompanionBuilder,
+      $$AchievementsTableUpdateCompanionBuilder,
+      (Achievement, $$AchievementsTableReferences),
+      Achievement,
+      PrefetchHooks Function({
+        bool childId,
+        bool kidCourseId,
+        bool paymentsRefs,
+        bool achievementTypeLinksRefs,
+      })
+    >;
+typedef $$PaymentsTableCreateCompanionBuilder =
+    PaymentsCompanion Function({
+      Value<int> id,
+      required int kidCourseId,
+      Value<int?> packageId,
+      Value<int?> achievementId,
+      Value<String?> type,
+      Value<String?> typeNameSnapshot,
+      required int amountCents,
+      required DateTime paymentDate,
+      Value<String?> notes,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+    });
+typedef $$PaymentsTableUpdateCompanionBuilder =
+    PaymentsCompanion Function({
+      Value<int> id,
+      Value<int> kidCourseId,
+      Value<int?> packageId,
+      Value<int?> achievementId,
+      Value<String?> type,
+      Value<String?> typeNameSnapshot,
+      Value<int> amountCents,
+      Value<DateTime> paymentDate,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+
+final class $$PaymentsTableReferences
+    extends BaseReferences<_$AppDatabase, $PaymentsTable, Payment> {
+  $$PaymentsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $KidCoursesTable _kidCourseIdTable(_$AppDatabase db) =>
+      db.kidCourses.createAlias(
+        $_aliasNameGenerator(db.payments.kidCourseId, db.kidCourses.id),
+      );
+
+  $$KidCoursesTableProcessedTableManager get kidCourseId {
+    final $_column = $_itemColumn<int>('kid_course_id')!;
+
+    final manager = $$KidCoursesTableTableManager(
+      $_db,
+      $_db.kidCourses,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_kidCourseIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $PackagesTable _packageIdTable(_$AppDatabase db) => db.packages
+      .createAlias($_aliasNameGenerator(db.payments.packageId, db.packages.id));
+
+  $$PackagesTableProcessedTableManager? get packageId {
+    final $_column = $_itemColumn<int>('package_id');
+    if ($_column == null) return null;
+    final manager = $$PackagesTableTableManager(
+      $_db,
+      $_db.packages,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_packageIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $AchievementsTable _achievementIdTable(_$AppDatabase db) =>
+      db.achievements.createAlias(
+        $_aliasNameGenerator(db.payments.achievementId, db.achievements.id),
+      );
+
+  $$AchievementsTableProcessedTableManager? get achievementId {
+    final $_column = $_itemColumn<int>('achievement_id');
+    if ($_column == null) return null;
+    final manager = $$AchievementsTableTableManager(
+      $_db,
+      $_db.achievements,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_achievementIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$PaymentsTableFilterComposer
+    extends Composer<_$AppDatabase, $PaymentsTable> {
+  $$PaymentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get typeNameSnapshot => $composableBuilder(
+    column: $table.typeNameSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amountCents => $composableBuilder(
+    column: $table.amountCents,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get paymentDate => $composableBuilder(
+    column: $table.paymentDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$KidCoursesTableFilterComposer get kidCourseId {
+    final $$KidCoursesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.kidCourseId,
+      referencedTable: $db.kidCourses,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$KidCoursesTableFilterComposer(
+            $db: $db,
+            $table: $db.kidCourses,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PackagesTableFilterComposer get packageId {
+    final $$PackagesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.packageId,
+      referencedTable: $db.packages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PackagesTableFilterComposer(
+            $db: $db,
+            $table: $db.packages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AchievementsTableFilterComposer get achievementId {
+    final $$AchievementsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.achievementId,
+      referencedTable: $db.achievements,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AchievementsTableFilterComposer(
+            $db: $db,
+            $table: $db.achievements,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PaymentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PaymentsTable> {
+  $$PaymentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get typeNameSnapshot => $composableBuilder(
+    column: $table.typeNameSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amountCents => $composableBuilder(
+    column: $table.amountCents,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get paymentDate => $composableBuilder(
+    column: $table.paymentDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$KidCoursesTableOrderingComposer get kidCourseId {
+    final $$KidCoursesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.kidCourseId,
+      referencedTable: $db.kidCourses,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$KidCoursesTableOrderingComposer(
+            $db: $db,
+            $table: $db.kidCourses,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PackagesTableOrderingComposer get packageId {
+    final $$PackagesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.packageId,
+      referencedTable: $db.packages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PackagesTableOrderingComposer(
+            $db: $db,
+            $table: $db.packages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AchievementsTableOrderingComposer get achievementId {
+    final $$AchievementsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.achievementId,
+      referencedTable: $db.achievements,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AchievementsTableOrderingComposer(
+            $db: $db,
+            $table: $db.achievements,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PaymentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PaymentsTable> {
+  $$PaymentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get typeNameSnapshot => $composableBuilder(
+    column: $table.typeNameSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get amountCents => $composableBuilder(
+    column: $table.amountCents,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get paymentDate => $composableBuilder(
+    column: $table.paymentDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$KidCoursesTableAnnotationComposer get kidCourseId {
+    final $$KidCoursesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.kidCourseId,
+      referencedTable: $db.kidCourses,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$KidCoursesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.kidCourses,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PackagesTableAnnotationComposer get packageId {
+    final $$PackagesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.packageId,
+      referencedTable: $db.packages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PackagesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.packages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AchievementsTableAnnotationComposer get achievementId {
+    final $$AchievementsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.achievementId,
+      referencedTable: $db.achievements,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AchievementsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.achievements,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PaymentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PaymentsTable,
+          Payment,
+          $$PaymentsTableFilterComposer,
+          $$PaymentsTableOrderingComposer,
+          $$PaymentsTableAnnotationComposer,
+          $$PaymentsTableCreateCompanionBuilder,
+          $$PaymentsTableUpdateCompanionBuilder,
+          (Payment, $$PaymentsTableReferences),
+          Payment,
+          PrefetchHooks Function({
+            bool kidCourseId,
+            bool packageId,
+            bool achievementId,
+          })
+        > {
+  $$PaymentsTableTableManager(_$AppDatabase db, $PaymentsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PaymentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PaymentsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PaymentsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> kidCourseId = const Value.absent(),
+                Value<int?> packageId = const Value.absent(),
+                Value<int?> achievementId = const Value.absent(),
+                Value<String?> type = const Value.absent(),
+                Value<String?> typeNameSnapshot = const Value.absent(),
+                Value<int> amountCents = const Value.absent(),
+                Value<DateTime> paymentDate = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => PaymentsCompanion(
+                id: id,
+                kidCourseId: kidCourseId,
+                packageId: packageId,
+                achievementId: achievementId,
+                type: type,
+                typeNameSnapshot: typeNameSnapshot,
+                amountCents: amountCents,
+                paymentDate: paymentDate,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int kidCourseId,
+                Value<int?> packageId = const Value.absent(),
+                Value<int?> achievementId = const Value.absent(),
+                Value<String?> type = const Value.absent(),
+                Value<String?> typeNameSnapshot = const Value.absent(),
+                required int amountCents,
+                required DateTime paymentDate,
+                Value<String?> notes = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+              }) => PaymentsCompanion.insert(
+                id: id,
+                kidCourseId: kidCourseId,
+                packageId: packageId,
+                achievementId: achievementId,
+                type: type,
+                typeNameSnapshot: typeNameSnapshot,
+                amountCents: amountCents,
+                paymentDate: paymentDate,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PaymentsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                kidCourseId = false,
+                packageId = false,
+                achievementId = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (kidCourseId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.kidCourseId,
+                                    referencedTable: $$PaymentsTableReferences
+                                        ._kidCourseIdTable(db),
+                                    referencedColumn: $$PaymentsTableReferences
+                                        ._kidCourseIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (packageId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.packageId,
+                                    referencedTable: $$PaymentsTableReferences
+                                        ._packageIdTable(db),
+                                    referencedColumn: $$PaymentsTableReferences
+                                        ._packageIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (achievementId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.achievementId,
+                                    referencedTable: $$PaymentsTableReferences
+                                        ._achievementIdTable(db),
+                                    referencedColumn: $$PaymentsTableReferences
+                                        ._achievementIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$PaymentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PaymentsTable,
+      Payment,
+      $$PaymentsTableFilterComposer,
+      $$PaymentsTableOrderingComposer,
+      $$PaymentsTableAnnotationComposer,
+      $$PaymentsTableCreateCompanionBuilder,
+      $$PaymentsTableUpdateCompanionBuilder,
+      (Payment, $$PaymentsTableReferences),
+      Payment,
+      PrefetchHooks Function({
+        bool kidCourseId,
+        bool packageId,
+        bool achievementId,
+      })
+    >;
+typedef $$AchievementTypeLinksTableCreateCompanionBuilder =
+    AchievementTypeLinksCompanion Function({
+      Value<int> id,
+      required int achievementId,
+      required String type,
+      required String typeNameSnapshot,
+      Value<int> sortOrder,
+      required DateTime createdAt,
+    });
+typedef $$AchievementTypeLinksTableUpdateCompanionBuilder =
+    AchievementTypeLinksCompanion Function({
+      Value<int> id,
+      Value<int> achievementId,
+      Value<String> type,
+      Value<String> typeNameSnapshot,
+      Value<int> sortOrder,
+      Value<DateTime> createdAt,
+    });
+
+final class $$AchievementTypeLinksTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $AchievementTypeLinksTable,
+          AchievementTypeLink
+        > {
+  $$AchievementTypeLinksTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $AchievementsTable _achievementIdTable(_$AppDatabase db) =>
+      db.achievements.createAlias(
+        $_aliasNameGenerator(
+          db.achievementTypeLinks.achievementId,
+          db.achievements.id,
+        ),
+      );
+
+  $$AchievementsTableProcessedTableManager get achievementId {
+    final $_column = $_itemColumn<int>('achievement_id')!;
+
+    final manager = $$AchievementsTableTableManager(
+      $_db,
+      $_db.achievements,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_achievementIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$AchievementTypeLinksTableFilterComposer
+    extends Composer<_$AppDatabase, $AchievementTypeLinksTable> {
+  $$AchievementTypeLinksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get typeNameSnapshot => $composableBuilder(
+    column: $table.typeNameSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$AchievementsTableFilterComposer get achievementId {
+    final $$AchievementsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.achievementId,
+      referencedTable: $db.achievements,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AchievementsTableFilterComposer(
+            $db: $db,
+            $table: $db.achievements,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AchievementTypeLinksTableOrderingComposer
+    extends Composer<_$AppDatabase, $AchievementTypeLinksTable> {
+  $$AchievementTypeLinksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get typeNameSnapshot => $composableBuilder(
+    column: $table.typeNameSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$AchievementsTableOrderingComposer get achievementId {
+    final $$AchievementsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.achievementId,
+      referencedTable: $db.achievements,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AchievementsTableOrderingComposer(
+            $db: $db,
+            $table: $db.achievements,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AchievementTypeLinksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AchievementTypeLinksTable> {
+  $$AchievementTypeLinksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get typeNameSnapshot => $composableBuilder(
+    column: $table.typeNameSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$AchievementsTableAnnotationComposer get achievementId {
+    final $$AchievementsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.achievementId,
+      referencedTable: $db.achievements,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AchievementsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.achievements,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AchievementTypeLinksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AchievementTypeLinksTable,
+          AchievementTypeLink,
+          $$AchievementTypeLinksTableFilterComposer,
+          $$AchievementTypeLinksTableOrderingComposer,
+          $$AchievementTypeLinksTableAnnotationComposer,
+          $$AchievementTypeLinksTableCreateCompanionBuilder,
+          $$AchievementTypeLinksTableUpdateCompanionBuilder,
+          (AchievementTypeLink, $$AchievementTypeLinksTableReferences),
+          AchievementTypeLink,
+          PrefetchHooks Function({bool achievementId})
+        > {
+  $$AchievementTypeLinksTableTableManager(
+    _$AppDatabase db,
+    $AchievementTypeLinksTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AchievementTypeLinksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AchievementTypeLinksTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$AchievementTypeLinksTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> achievementId = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<String> typeNameSnapshot = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => AchievementTypeLinksCompanion(
+                id: id,
+                achievementId: achievementId,
+                type: type,
+                typeNameSnapshot: typeNameSnapshot,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int achievementId,
+                required String type,
+                required String typeNameSnapshot,
+                Value<int> sortOrder = const Value.absent(),
+                required DateTime createdAt,
+              }) => AchievementTypeLinksCompanion.insert(
+                id: id,
+                achievementId: achievementId,
+                type: type,
+                typeNameSnapshot: typeNameSnapshot,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$AchievementTypeLinksTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({achievementId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -14265,29 +15456,18 @@ class $$AchievementsTableTableManager
                       dynamic
                     >
                   >(state) {
-                    if (childId) {
+                    if (achievementId) {
                       state =
                           state.withJoin(
                                 currentTable: table,
-                                currentColumn: table.childId,
-                                referencedTable: $$AchievementsTableReferences
-                                    ._childIdTable(db),
-                                referencedColumn: $$AchievementsTableReferences
-                                    ._childIdTable(db)
-                                    .id,
-                              )
-                              as T;
-                    }
-                    if (kidCourseId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.kidCourseId,
-                                referencedTable: $$AchievementsTableReferences
-                                    ._kidCourseIdTable(db),
-                                referencedColumn: $$AchievementsTableReferences
-                                    ._kidCourseIdTable(db)
-                                    .id,
+                                currentColumn: table.achievementId,
+                                referencedTable:
+                                    $$AchievementTypeLinksTableReferences
+                                        ._achievementIdTable(db),
+                                referencedColumn:
+                                    $$AchievementTypeLinksTableReferences
+                                        ._achievementIdTable(db)
+                                        .id,
                               )
                               as T;
                     }
@@ -14303,19 +15483,19 @@ class $$AchievementsTableTableManager
       );
 }
 
-typedef $$AchievementsTableProcessedTableManager =
+typedef $$AchievementTypeLinksTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $AchievementsTable,
-      Achievement,
-      $$AchievementsTableFilterComposer,
-      $$AchievementsTableOrderingComposer,
-      $$AchievementsTableAnnotationComposer,
-      $$AchievementsTableCreateCompanionBuilder,
-      $$AchievementsTableUpdateCompanionBuilder,
-      (Achievement, $$AchievementsTableReferences),
-      Achievement,
-      PrefetchHooks Function({bool childId, bool kidCourseId})
+      $AchievementTypeLinksTable,
+      AchievementTypeLink,
+      $$AchievementTypeLinksTableFilterComposer,
+      $$AchievementTypeLinksTableOrderingComposer,
+      $$AchievementTypeLinksTableAnnotationComposer,
+      $$AchievementTypeLinksTableCreateCompanionBuilder,
+      $$AchievementTypeLinksTableUpdateCompanionBuilder,
+      (AchievementTypeLink, $$AchievementTypeLinksTableReferences),
+      AchievementTypeLink,
+      PrefetchHooks Function({bool achievementId})
     >;
 typedef $$AttachmentsTableCreateCompanionBuilder =
     AttachmentsCompanion Function({
@@ -15639,10 +16819,12 @@ class $AppDatabaseManager {
       $$ClassRecordsTableTableManager(_db, _db.classRecords);
   $$CreditTransactionsTableTableManager get creditTransactions =>
       $$CreditTransactionsTableTableManager(_db, _db.creditTransactions);
-  $$PaymentsTableTableManager get payments =>
-      $$PaymentsTableTableManager(_db, _db.payments);
   $$AchievementsTableTableManager get achievements =>
       $$AchievementsTableTableManager(_db, _db.achievements);
+  $$PaymentsTableTableManager get payments =>
+      $$PaymentsTableTableManager(_db, _db.payments);
+  $$AchievementTypeLinksTableTableManager get achievementTypeLinks =>
+      $$AchievementTypeLinksTableTableManager(_db, _db.achievementTypeLinks);
   $$AttachmentsTableTableManager get attachments =>
       $$AttachmentsTableTableManager(_db, _db.attachments);
   $$ContactsTableTableManager get contacts =>
