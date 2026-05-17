@@ -1,5 +1,13 @@
 import 'package:class2data/data/database/app_database.dart';
 
+/// 单项费用类型明细
+class FeeTypeEntry {
+  final String typeName;
+  final int amountCents;
+
+  const FeeTypeEntry({required this.typeName, required this.amountCents});
+}
+
 /// 课程统计数据
 class CourseStatistics {
   final int classCount;
@@ -9,6 +17,7 @@ class CourseStatistics {
   final int remainingCredits;
   final int purchasedCredits;
   final DateTime? firstClassDate;
+  final List<FeeTypeEntry> feeBreakdown;
 
   const CourseStatistics({
     this.classCount = 0,
@@ -18,6 +27,7 @@ class CourseStatistics {
     this.remainingCredits = 0,
     this.purchasedCredits = 0,
     this.firstClassDate,
+    this.feeBreakdown = const [],
   });
 }
 
@@ -91,6 +101,24 @@ class CourseStatisticsService {
     }
     final remaining = purchasedCredits - consumedCredits;
 
+    // 按费用类型分组
+    final feeByType = <String, int>{};
+    for (final p in payments) {
+      final key = p.typeNameSnapshot ?? _paymentTypeLabel(p.type) ?? '未分类';
+      feeByType[key] = (feeByType[key] ?? 0) + p.amountCents;
+    }
+    for (final p in packages) {
+      if (!p.isVoided && p.amountCents != null && p.amountCents! > 0) {
+        final key = CreditBalanceFormatter().packageTypeLabel(p.type);
+        feeByType[key] = (feeByType[key] ?? 0) + p.amountCents!;
+      }
+    }
+    final feeBreakdown =
+        feeByType.entries
+            .map((e) => FeeTypeEntry(typeName: e.key, amountCents: e.value))
+            .toList()
+          ..sort((a, b) => b.amountCents.compareTo(a.amountCents));
+
     return CourseStatistics(
       classCount: classCount,
       totalDurationMinutes: totalDuration,
@@ -99,6 +127,7 @@ class CourseStatisticsService {
       remainingCredits: remaining,
       purchasedCredits: purchasedCredits,
       firstClassDate: firstClassDate,
+      feeBreakdown: feeBreakdown,
     );
   }
 
@@ -168,6 +197,20 @@ class CourseStatisticsService {
     return '${d.year.toString().padLeft(4, '0')}-'
         '${d.month.toString().padLeft(2, '0')}-'
         '${d.day.toString().padLeft(2, '0')}';
+  }
+
+  String? _paymentTypeLabel(String? type) {
+    return switch (type) {
+      'tuition' => '学费',
+      'material' => '教材费',
+      'exam' => '考级费',
+      'competition' => '比赛费',
+      'props' => '道具费',
+      'costume' => '服装费',
+      'registration' => '报名费',
+      'other' => '其他费用',
+      _ => type,
+    };
   }
 }
 

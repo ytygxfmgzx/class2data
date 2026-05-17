@@ -261,7 +261,7 @@ class _SummaryBar extends StatelessWidget {
   }
 }
 
-class _CourseStatsCard extends StatelessWidget {
+class _CourseStatsCard extends StatefulWidget {
   final KidCourse course;
   final CourseStatistics? stats;
   final String? childName;
@@ -279,18 +279,29 @@ class _CourseStatsCard extends StatelessWidget {
   });
 
   @override
+  State<_CourseStatsCard> createState() => _CourseStatsCardState();
+}
+
+class _CourseStatsCardState extends State<_CourseStatsCard> {
+  bool _feeExpanded = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final formatter = CreditBalanceFormatter();
+    final stats = widget.stats;
 
     final durationMinutes = stats?.totalDurationMinutes ?? 0;
     final spentCents = stats?.totalSpentCents ?? 0;
-    final timePercent = totalDuration > 0
-        ? (durationMinutes / totalDuration * 100).toStringAsFixed(2)
+    final timePercent = widget.totalDuration > 0
+        ? (durationMinutes / widget.totalDuration * 100).toStringAsFixed(2)
         : '--';
-    final spentPercent = totalSpent > 0
-        ? (spentCents / totalSpent * 100).toStringAsFixed(2)
+    final spentPercent = widget.totalSpent > 0
+        ? (spentCents / widget.totalSpent * 100).toStringAsFixed(2)
         : '--';
+
+    final hasBreakdown =
+        stats != null && stats.feeBreakdown.isNotEmpty && spentCents > 0;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -302,27 +313,27 @@ class _CourseStatsCard extends StatelessWidget {
             // 头部：孩子头像 + 课程信息
             Row(
               children: [
-                if (childName != null)
+                if (widget.childName != null)
                   ChildAvatar(
-                    name: childName!,
-                    avatarPath: childAvatarPath,
+                    name: widget.childName!,
+                    avatarPath: widget.childAvatarPath,
                     radius: 14,
                   ),
-                if (childName != null) const SizedBox(width: 10),
+                if (widget.childName != null) const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        course.name,
+                        widget.course.name,
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      if (course.institutionName != null &&
-                          course.institutionName!.isNotEmpty)
+                      if (widget.course.institutionName != null &&
+                          widget.course.institutionName!.isNotEmpty)
                         Text(
-                          course.institutionName!,
+                          widget.course.institutionName!,
                           style: TextStyle(
                             fontSize: 12,
                             color: theme.colorScheme.onSurfaceVariant,
@@ -374,18 +385,43 @@ class _CourseStatsCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _StatCell(
-                    icon: Icons.payments,
-                    label: '花费',
-                    value: formatter.formatAmount(spentCents),
+            // 花费行（可点击展开）
+            GestureDetector(
+              onTap: hasBreakdown
+                  ? () => setState(() => _feeExpanded = !_feeExpanded)
+                  : null,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _StatCell(
+                      icon: Icons.payments,
+                      label: '花费',
+                      value: formatter.formatAmount(spentCents),
+                      trailing: hasBreakdown
+                          ? AnimatedRotation(
+                              turns: _feeExpanded ? 0.25 : 0,
+                              duration: const Duration(milliseconds: 200),
+                              child: Icon(
+                                Icons.chevron_right,
+                                size: 18,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            )
+                          : null,
+                    ),
                   ),
-                ),
-                const Expanded(child: SizedBox()),
-              ],
+                  const Expanded(child: SizedBox()),
+                ],
+              ),
             ),
+            // 费用明细展开区
+            if (_feeExpanded && hasBreakdown) ...[
+              const SizedBox(height: 8),
+              _FeeBreakdownList(
+                breakdown: stats.feeBreakdown,
+                totalCents: spentCents,
+              ),
+            ],
             const SizedBox(height: 8),
             // 占比行
             Row(
@@ -394,14 +430,14 @@ class _CourseStatsCard extends StatelessWidget {
                   child: _StatCell(
                     icon: Icons.pie_chart_outline,
                     label: '时间占比',
-                    value: totalDuration > 0 ? '$timePercent%' : '--',
+                    value: widget.totalDuration > 0 ? '$timePercent%' : '--',
                   ),
                 ),
                 Expanded(
                   child: _StatCell(
                     icon: Icons.pie_chart_outline,
                     label: '花费占比',
-                    value: totalSpent > 0 ? '$spentPercent%' : '--',
+                    value: widget.totalSpent > 0 ? '$spentPercent%' : '--',
                   ),
                 ),
               ],
@@ -442,11 +478,13 @@ class _StatCell extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  final Widget? trailing;
 
   const _StatCell({
     required this.icon,
     required this.label,
     required this.value,
+    this.trailing,
   });
 
   @override
@@ -462,26 +500,143 @@ class _StatCell extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
           const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: theme.colorScheme.onSurfaceVariant,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-              Text(
-                value,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+                Text(
+                  value,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+          if (trailing != null) trailing!,
         ],
       ),
+    );
+  }
+}
+
+class _FeeBreakdownList extends StatelessWidget {
+  final List<FeeTypeEntry> breakdown;
+  final int totalCents;
+
+  const _FeeBreakdownList({required this.breakdown, required this.totalCents});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final formatter = CreditBalanceFormatter();
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (int i = 0; i < breakdown.length; i++) ...[
+            if (i > 0)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Divider(
+                  height: 1,
+                  color: theme.colorScheme.outlineVariant.withValues(
+                    alpha: 0.5,
+                  ),
+                ),
+              ),
+            _FeeBreakdownRow(
+              entry: breakdown[i],
+              totalCents: totalCents,
+              formatter: formatter,
+              color: _breakdownColor(theme, i),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Color _breakdownColor(ThemeData theme, int index) {
+    final colors = [
+      theme.colorScheme.primary,
+      theme.colorScheme.tertiary,
+      theme.colorScheme.secondary,
+      theme.colorScheme.error,
+      theme.colorScheme.primaryContainer,
+      theme.colorScheme.tertiaryContainer,
+    ];
+    return colors[index % colors.length];
+  }
+}
+
+class _FeeBreakdownRow extends StatelessWidget {
+  final FeeTypeEntry entry;
+  final int totalCents;
+  final CreditBalanceFormatter formatter;
+  final Color color;
+
+  const _FeeBreakdownRow({
+    required this.entry,
+    required this.totalCents,
+    required this.formatter,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final percent = totalCents > 0
+        ? (entry.amountCents / totalCents * 100)
+        : 0.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              entry.typeName,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Text(
+              '${formatter.formatAmount(entry.amountCents)}  ${percent.toStringAsFixed(1)}%',
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(2),
+          child: LinearProgressIndicator(
+            value: totalCents > 0 ? entry.amountCents / totalCents : 0,
+            backgroundColor: theme.colorScheme.outlineVariant.withValues(
+              alpha: 0.3,
+            ),
+            valueColor: AlwaysStoppedAnimation(color),
+            minHeight: 4,
+          ),
+        ),
+      ],
     );
   }
 }
