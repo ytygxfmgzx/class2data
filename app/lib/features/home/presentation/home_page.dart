@@ -30,6 +30,12 @@ class _HomePageState extends ConsumerState<HomePage> {
   double _monthDragDistance = 0;
   int _monthTransitionDirection = 0;
 
+  final _quickAddMenuKey = GlobalKey(debugLabel: 'quickAddMenu');
+  int? _pullPointerId;
+  double _pullStartY = 0;
+  bool _pullTriggered = false;
+  bool _isScrollAtTop = true;
+
   _CalendarView _calendarView = _CalendarView.month;
   DateTime _monthViewMonth = DateTime(
     DateTime.now().year,
@@ -92,6 +98,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   void _shiftWeek(int direction) {
     setState(() {
+      _isScrollAtTop = true;
       _weekStart = _weekStart.add(Duration(days: direction * 7));
       final dayOffset = _selectedDate.weekday - 1;
       _selectedDate = _weekStart.add(Duration(days: dayOffset));
@@ -102,6 +109,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   void _selectDate(DateTime date) {
     if (date == _selectedDate) return;
     setState(() {
+      _isScrollAtTop = true;
       _selectedDate = date;
       _weekStart = _startOfWeek(date);
     });
@@ -171,6 +179,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   void _shiftMonth(int direction) {
     _monthTransitionDirection = direction.sign;
     setState(() {
+      _isScrollAtTop = true;
       _monthViewMonth = DateTime(
         _monthViewMonth.year,
         _monthViewMonth.month + direction,
@@ -216,6 +225,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   void _toggleView(_CalendarView view) {
     PageController? oldWeekCtrl;
     setState(() {
+      _isScrollAtTop = true;
       if (view == _CalendarView.month && _calendarView == _CalendarView.week) {
         _monthViewMonth = DateTime(_selectedDate.year, _selectedDate.month, 1);
         _monthSelectedDay = _selectedDate;
@@ -314,6 +324,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ),
           _QuickAddMenu(
+            popupKey: _quickAddMenuKey,
             courses: courses,
             children: children,
             selectedDateStr: _calendarView == _CalendarView.week
@@ -331,200 +342,216 @@ class _HomePageState extends ConsumerState<HomePage> {
               onFilterChanged: (f) => setState(() => _courseFilter = f),
             )
           : null,
-      body: Stack(
-        children: [
-          if (_calendarView == _CalendarView.week)
-            // ─── 周视图 ───
-            Column(
-              children: [
-                _MonthWeekNav(
-                  selectedDate: _selectedDate,
-                  onPreviousWeek: () => _shiftWeek(-1),
-                  onNextWeek: () => _shiftWeek(1),
-                  onToggleMonthPicker: () {
-                    setState(() {
-                      _showMonthPicker = !_showMonthPicker;
-                      _pickerYear = _selectedDate.year;
-                    });
-                  },
-                ),
-                _DayInfoBar(
-                  selectedDate: _selectedDate,
-                  courseCount: dayItems.length,
-                ),
-                _WeekStrip(
-                  weekStart: _weekStart,
-                  selectedDate: _selectedDate,
-                  today: today,
-                  datesWithCourses: datesWithCourses,
-                  onDateSelected: _selectDate,
-                ),
-                const Divider(height: 1),
-                Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    onPageChanged: (page) {
-                      final date = _pageToDate(page);
-                      if (date != _selectedDate) {
+      body: NotificationListener<ScrollNotification>(
+        onNotification: _handleScrollNotification,
+        child: Listener(
+          onPointerDown: _handlePointerDown,
+          onPointerMove: _handlePointerMove,
+          onPointerUp: _handlePointerUp,
+          onPointerCancel: _handlePointerCancel,
+          child: Stack(
+            children: [
+              if (_calendarView == _CalendarView.week)
+                // ─── 周视图 ───
+                Column(
+                  children: [
+                    _MonthWeekNav(
+                      selectedDate: _selectedDate,
+                      onPreviousWeek: () => _shiftWeek(-1),
+                      onNextWeek: () => _shiftWeek(1),
+                      onToggleMonthPicker: () {
                         setState(() {
-                          _selectedDate = date;
-                          _weekStart = _startOfWeek(date);
+                          _showMonthPicker = !_showMonthPicker;
+                          _pickerYear = _selectedDate.year;
                         });
-                      }
-                    },
-                    itemBuilder: (context, index) {
-                      if (weekItemsAsync.hasError) {
-                        return Center(
-                          child: Text('加载失败: ${weekItemsAsync.error}'),
-                        );
-                      }
-                      final date = _pageToDate(index);
-                      final dateStr = _formatDate(date);
-                      final pageItems = filteredWeekItems
-                          .where((o) => o.date == dateStr)
-                          .toList();
-
-                      if (pageItems.isEmpty && weekItemsAsync.isLoading) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (pageItems.isEmpty) {
-                        return _EmptyDayState(
-                          hasCourses: filteredWeekItems.isNotEmpty,
-                        );
-                      }
-                      return _OccurrenceList(
-                        items: pageItems,
-                        children: children,
-                        courses: courses,
-                        onRecordSaved: () => ref.invalidate(
-                          weekHomeItemsProvider(weekDataRange),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            )
-          else
-            // ─── 月视图 ───
-            Column(
-              children: [
-                _MonthWeekNav(
-                  selectedDate: _monthViewMonth,
-                  onPreviousWeek: () => _shiftMonth(-1),
-                  onNextWeek: () => _shiftMonth(1),
-                  onToggleMonthPicker: () {
-                    setState(() {
-                      _showMonthPicker = !_showMonthPicker;
-                      _pickerYear = _monthViewMonth.year;
-                    });
-                  },
-                ),
-                Expanded(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onHorizontalDragStart: _handleMonthDragStart,
-                    onHorizontalDragUpdate: _handleMonthDragUpdate,
-                    onHorizontalDragEnd: _handleMonthDragEnd,
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      transitionBuilder: (child, animation) {
-                        final incoming = child.key == monthPageKey;
-                        final direction = _monthTransitionDirection;
-                        final begin = direction == 0
-                            ? Offset.zero
-                            : Offset(
-                                incoming
-                                    ? direction.toDouble()
-                                    : -direction.toDouble(),
-                                0,
-                              );
-                        final curved = CurvedAnimation(
-                          parent: animation,
-                          curve: Curves.easeOutCubic,
-                        );
-                        return FadeTransition(
-                          opacity: curved,
-                          child: SlideTransition(
-                            position: Tween<Offset>(
-                              begin: begin,
-                              end: Offset.zero,
-                            ).animate(curved),
-                            child: child,
-                          ),
-                        );
                       },
-                      child: Column(
-                        key: monthPageKey,
-                        children: [
-                          _buildWeekdayHeader(context),
-                          _MonthCalendarGrid(
-                            month: _monthViewMonth,
-                            selectedDay: _monthSelectedDay,
-                            today: today,
-                            courseCountByDate: monthCourseCountByDate,
-                            onDaySelected: (date) {
-                              setState(() => _monthSelectedDay = date);
-                            },
-                          ),
-                          const Divider(height: 1),
-                          _DayInfoBar(
-                            selectedDate: _monthSelectedDay,
-                            courseCount: monthDayItems.length,
-                          ),
-                          Expanded(
-                            child: monthItemsAsync?.hasError == true
-                                ? Center(
-                                    child: Text(
-                                      '加载失败: ${monthItemsAsync!.error}',
-                                    ),
-                                  )
-                                : monthDayItems.isEmpty &&
-                                      monthItemsAsync?.isLoading != true
-                                ? _EmptyDayState(
-                                    hasCourses: filteredMonthItems.isNotEmpty,
-                                  )
-                                : monthItemsAsync?.isLoading == true
-                                ? const Center(
-                                    child: CircularProgressIndicator(),
-                                  )
-                                : _OccurrenceList(
-                                    items: monthDayItems,
-                                    children: children,
-                                    courses: courses,
-                                    onRecordSaved: () => ref.invalidate(
-                                      weekHomeItemsProvider(monthGridRange!),
-                                    ),
-                                  ),
-                          ),
-                        ],
+                    ),
+                    _DayInfoBar(
+                      selectedDate: _selectedDate,
+                      courseCount: dayItems.length,
+                    ),
+                    _WeekStrip(
+                      weekStart: _weekStart,
+                      selectedDate: _selectedDate,
+                      today: today,
+                      datesWithCourses: datesWithCourses,
+                      onDateSelected: _selectDate,
+                    ),
+                    const Divider(height: 1),
+                    Expanded(
+                      child: PageView.builder(
+                        controller: _pageController,
+                        onPageChanged: (page) {
+                          final date = _pageToDate(page);
+                          if (date != _selectedDate) {
+                            setState(() {
+                              _isScrollAtTop = true;
+                              _selectedDate = date;
+                              _weekStart = _startOfWeek(date);
+                            });
+                          }
+                        },
+                        itemBuilder: (context, index) {
+                          if (weekItemsAsync.hasError) {
+                            return Center(
+                              child: Text('加载失败: ${weekItemsAsync.error}'),
+                            );
+                          }
+                          final date = _pageToDate(index);
+                          final dateStr = _formatDate(date);
+                          final pageItems = filteredWeekItems
+                              .where((o) => o.date == dateStr)
+                              .toList();
+
+                          if (pageItems.isEmpty && weekItemsAsync.isLoading) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+                          if (pageItems.isEmpty) {
+                            return _EmptyDayState(
+                              hasCourses: filteredWeekItems.isNotEmpty,
+                            );
+                          }
+                          return _OccurrenceList(
+                            items: pageItems,
+                            children: children,
+                            courses: courses,
+                            onRecordSaved: () => ref.invalidate(
+                              weekHomeItemsProvider(weekDataRange),
+                            ),
+                          );
+                        },
                       ),
                     ),
+                  ],
+                )
+              else
+                // ─── 月视图 ───
+                Column(
+                  children: [
+                    _MonthWeekNav(
+                      selectedDate: _monthViewMonth,
+                      onPreviousWeek: () => _shiftMonth(-1),
+                      onNextWeek: () => _shiftMonth(1),
+                      onToggleMonthPicker: () {
+                        setState(() {
+                          _showMonthPicker = !_showMonthPicker;
+                          _pickerYear = _monthViewMonth.year;
+                        });
+                      },
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onHorizontalDragStart: _handleMonthDragStart,
+                        onHorizontalDragUpdate: _handleMonthDragUpdate,
+                        onHorizontalDragEnd: _handleMonthDragEnd,
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          transitionBuilder: (child, animation) {
+                            final incoming = child.key == monthPageKey;
+                            final direction = _monthTransitionDirection;
+                            final begin = direction == 0
+                                ? Offset.zero
+                                : Offset(
+                                    incoming
+                                        ? direction.toDouble()
+                                        : -direction.toDouble(),
+                                    0,
+                                  );
+                            final curved = CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.easeOutCubic,
+                            );
+                            return FadeTransition(
+                              opacity: curved,
+                              child: SlideTransition(
+                                position: Tween<Offset>(
+                                  begin: begin,
+                                  end: Offset.zero,
+                                ).animate(curved),
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: Column(
+                            key: monthPageKey,
+                            children: [
+                              _buildWeekdayHeader(context),
+                              _MonthCalendarGrid(
+                                month: _monthViewMonth,
+                                selectedDay: _monthSelectedDay,
+                                today: today,
+                                courseCountByDate: monthCourseCountByDate,
+                                onDaySelected: (date) {
+                                  setState(() => _monthSelectedDay = date);
+                                },
+                              ),
+                              const Divider(height: 1),
+                              _DayInfoBar(
+                                selectedDate: _monthSelectedDay,
+                                courseCount: monthDayItems.length,
+                              ),
+                              Expanded(
+                                child: monthItemsAsync?.hasError == true
+                                    ? Center(
+                                        child: Text(
+                                          '加载失败: ${monthItemsAsync!.error}',
+                                        ),
+                                      )
+                                    : monthDayItems.isEmpty &&
+                                          monthItemsAsync?.isLoading != true
+                                    ? _EmptyDayState(
+                                        hasCourses:
+                                            filteredMonthItems.isNotEmpty,
+                                      )
+                                    : monthItemsAsync?.isLoading == true
+                                    ? const Center(
+                                        child: CircularProgressIndicator(),
+                                      )
+                                    : _OccurrenceList(
+                                        items: monthDayItems,
+                                        children: children,
+                                        courses: courses,
+                                        onRecordSaved: () => ref.invalidate(
+                                          weekHomeItemsProvider(
+                                            monthGridRange!,
+                                          ),
+                                        ),
+                                      ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              // 月份选择器浮层
+              if (_showMonthPicker) ...[
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => setState(() => _showMonthPicker = false),
+                  child: const SizedBox.expand(),
+                ),
+                Positioned(
+                  top: 0,
+                  left: 16,
+                  right: 16,
+                  child: _MonthPickerPopup(
+                    pickerYear: _pickerYear,
+                    selectedDate: _calendarView == _CalendarView.week
+                        ? _selectedDate
+                        : _monthViewMonth,
+                    onYearChanged: (y) => setState(() => _pickerYear = y),
+                    onMonthSelected: _selectMonth,
                   ),
                 ),
               ],
-            ),
-          // 月份选择器浮层
-          if (_showMonthPicker) ...[
-            GestureDetector(
-              onTap: () => setState(() => _showMonthPicker = false),
-              child: const SizedBox.expand(),
-            ),
-            Positioned(
-              top: 0,
-              left: 16,
-              right: 16,
-              child: _MonthPickerPopup(
-                pickerYear: _pickerYear,
-                selectedDate: _calendarView == _CalendarView.week
-                    ? _selectedDate
-                    : _monthViewMonth,
-                onYearChanged: (y) => setState(() => _pickerYear = y),
-                onMonthSelected: _selectMonth,
-              ),
-            ),
-          ],
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -583,17 +610,62 @@ class _HomePageState extends ConsumerState<HomePage> {
     if (courseId == null) return items;
     return items.where((o) => o.kidCourseId == courseId).toList();
   }
+
+  bool _handleScrollNotification(ScrollNotification notification) {
+    if (notification is ScrollUpdateNotification) {
+      _isScrollAtTop = notification.metrics.pixels <= 0;
+    }
+    return false;
+  }
+
+  void _handlePointerDown(PointerDownEvent event) {
+    _pullPointerId = event.pointer;
+    _pullStartY = event.position.dy;
+    _pullTriggered = false;
+  }
+
+  void _handlePointerMove(PointerMoveEvent event) {
+    if (event.pointer != _pullPointerId || _pullTriggered || !_isScrollAtTop) {
+      return;
+    }
+    final dy = event.position.dy - _pullStartY;
+    if (dy > 100) {
+      _pullTriggered = true;
+      _showQuickAddMenu();
+    }
+  }
+
+  void _handlePointerUp(PointerEvent event) {
+    if (event.pointer == _pullPointerId) {
+      _pullPointerId = null;
+    }
+  }
+
+  void _handlePointerCancel(PointerEvent event) {
+    if (event.pointer == _pullPointerId) {
+      _pullPointerId = null;
+    }
+  }
+
+  void _showQuickAddMenu() {
+    final state = _quickAddMenuKey.currentState;
+    if (state != null) {
+      (state as dynamic).showButtonMenu();
+    }
+  }
 }
 
 // ─── 快捷添加菜单 ───
 
 class _QuickAddMenu extends ConsumerWidget {
+  final Key? popupKey;
   final List<KidCourse> courses;
   final List<ChildrenData> children;
   final String selectedDateStr;
   final VoidCallback onRefresh;
 
   const _QuickAddMenu({
+    this.popupKey,
     required this.courses,
     required this.children,
     required this.selectedDateStr,
@@ -603,6 +675,7 @@ class _QuickAddMenu extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return PopupMenuButton<String>(
+      key: popupKey,
       icon: const Icon(Icons.add),
       tooltip: '快捷操作',
       onSelected: (value) async {
@@ -620,17 +693,73 @@ class _QuickAddMenu extends ConsumerWidget {
             await _openQuickAchievement(context);
           case 'child':
             await context.push('/children/add');
+          case 'courseManage':
+            if (context.mounted) {
+              await context.push('/course-manage');
+            }
         }
       },
       itemBuilder: (context) => [
         const PopupMenuItem(
           value: 'record',
-          child: Text('记录上课', style: TextStyle(fontWeight: FontWeight.w600)),
+          child: Row(
+            children: [
+              Icon(Icons.edit_note, size: 20),
+              SizedBox(width: 12),
+              Text('记录上课', style: TextStyle(fontWeight: FontWeight.w600)),
+            ],
+          ),
         ),
-        const PopupMenuItem(value: 'package', child: Text('录入课时包')),
-        const PopupMenuItem(value: 'course', child: Text('录入课程')),
-        const PopupMenuItem(value: 'achievement', child: Text('录入成就')),
-        const PopupMenuItem(value: 'child', child: Text('录入孩子')),
+        const PopupMenuItem(
+          value: 'achievement',
+          child: Row(
+            children: [
+              Icon(Icons.emoji_events_outlined, size: 20),
+              SizedBox(width: 12),
+              Text('记录成长'),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'course',
+          child: Row(
+            children: [
+              Icon(Icons.school_outlined, size: 20),
+              SizedBox(width: 12),
+              Text('录入课程'),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'package',
+          child: Row(
+            children: [
+              Icon(Icons.inventory_2_outlined, size: 20),
+              SizedBox(width: 12),
+              Text('录入课时包'),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'child',
+          child: Row(
+            children: [
+              Icon(Icons.child_care_outlined, size: 20),
+              SizedBox(width: 12),
+              Text('录入孩子'),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'courseManage',
+          child: Row(
+            children: [
+              Icon(Icons.manage_accounts_outlined, size: 20),
+              SizedBox(width: 12),
+              Text('课程管理'),
+            ],
+          ),
+        ),
       ],
     );
   }
