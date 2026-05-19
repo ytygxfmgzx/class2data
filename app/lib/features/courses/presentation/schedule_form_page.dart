@@ -1015,6 +1015,7 @@ class _DateField extends StatelessWidget {
           initialDate: date ?? DateTime.now(),
           firstDate: DateTime(2024),
           lastDate: DateTime(2030),
+          locale: const Locale('zh', 'CN'),
         );
         if (d != null) onPicked(d);
       },

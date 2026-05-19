@@ -3,6 +3,9 @@ import 'package:class2data/features/achievements/presentation/achievement_form_p
 import 'package:class2data/features/achievements/providers/achievement_providers.dart';
 import 'package:class2data/features/backup/presentation/backup_page.dart';
 import 'package:class2data/features/backup/presentation/export_page.dart';
+import 'package:class2data/features/cloud_backup/presentation/webdav_config_page.dart';
+import 'package:class2data/features/cloud_backup/presentation/cloud_backup_page.dart';
+import 'package:class2data/features/cloud_backup/providers/webdav_config_providers.dart';
 import 'package:class2data/features/feedback/presentation/appreciation_page.dart';
 import 'package:class2data/features/feedback/presentation/feedback_page.dart';
 import 'package:class2data/features/children/presentation/child_form_page.dart';
@@ -237,6 +240,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'backup',
         builder: (context, state) => const BackupPage(),
       ),
+      // WebDAV 配置
+      GoRoute(
+        path: '/cloud-backup/config',
+        name: 'cloudBackupConfig',
+        builder: (context, state) => const WebDavConfigPage(),
+      ),
+      // 云端备份与恢复
+      GoRoute(
+        path: '/cloud-backup',
+        name: 'cloudBackup',
+        builder: (context, state) => const CloudBackupPage(),
+      ),
       // 课程管理
       GoRoute(
         path: '/course-manage',
@@ -380,9 +395,26 @@ class _SettingsPage extends ConsumerWidget {
             children: [
               _SettingsRow(
                 icon: Icons.shield,
-                title: '备份与恢复',
+                title: '本地备份与恢复',
                 value: '建议每月备份',
                 onTap: () => context.push('/backup'),
+              ),
+              _SettingsRow(
+                icon: Icons.cloud_outlined,
+                title: '云端备份与恢复',
+                value: '通过 WebDAV 同步',
+                onTap: () async {
+                  await ref
+                      .read(webDavConfigProvider.notifier)
+                      .loaded;
+                  if (!context.mounted) return;
+                  final config = ref.read(webDavConfigProvider);
+                  if (config.isConfigured) {
+                    context.push('/cloud-backup');
+                  } else {
+                    context.push('/cloud-backup/config');
+                  }
+                },
               ),
             ],
           ),

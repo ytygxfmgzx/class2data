@@ -110,44 +110,57 @@ class AttachmentListSection extends ConsumerWidget {
     if (source == null) return;
 
     final picker = ImagePicker();
-    final xFile = await picker.pickImage(
-      source: source,
-      maxWidth: 1920,
-      maxHeight: 1920,
-      imageQuality: 85,
-    );
-    if (xFile == null) return;
+    final List<XFile> selectedFiles;
+    if (source == ImageSource.camera) {
+      final xFile = await picker.pickImage(
+        source: source,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+      if (xFile == null) return;
+      selectedFiles = [xFile];
+    } else {
+      selectedFiles = await picker.pickMultiImage(
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+      if (selectedFiles.isEmpty) return;
+    }
 
     final fileService = ref.read(attachmentFileServiceProvider);
     final repo = ref.read(attachmentRepositoryProvider);
 
-    try {
-      final relativePath = await fileService.copyToPrivateDirectory(
-        sourcePath: xFile.path,
-        ownerType: ownerType,
-        ownerId: ownerId,
-      );
+    for (final xFile in selectedFiles) {
+      try {
+        final relativePath = await fileService.copyToPrivateDirectory(
+          sourcePath: xFile.path,
+          ownerType: ownerType,
+          ownerId: ownerId,
+        );
 
-      final originalName = xFile.name;
-      final fileSize = await File(xFile.path).length();
+        final originalName = xFile.name;
+        final fileSize = await File(xFile.path).length();
 
-      await repo.insertAttachment(
-        AttachmentsCompanion(
-          ownerType: Value(ownerType),
-          ownerId: Value(ownerId),
-          fileType: const Value('photo'),
-          originalFileName: Value(originalName),
-          relativePath: Value(relativePath),
-          fileSizeBytes: Value(fileSize),
-          mimeType: Value(xFile.mimeType),
-          createdAt: Value(DateTime.now()),
-        ),
-      );
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('添加附件失败: $e')));
+        await repo.insertAttachment(
+          AttachmentsCompanion(
+            ownerType: Value(ownerType),
+            ownerId: Value(ownerId),
+            fileType: const Value('photo'),
+            originalFileName: Value(originalName),
+            relativePath: Value(relativePath),
+            fileSizeBytes: Value(fileSize),
+            mimeType: Value(xFile.mimeType),
+            createdAt: Value(DateTime.now()),
+          ),
+        );
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('添加附件失败: $e')));
+        }
       }
     }
   }

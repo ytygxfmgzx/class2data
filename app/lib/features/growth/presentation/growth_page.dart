@@ -81,8 +81,12 @@ class GrowthPage extends ConsumerWidget {
         <KidCourse>[];
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: const Text('成长'),
+        backgroundColor: const Color(0xFFF5F5F5),
+        elevation: 0,
+        scrolledUnderElevation: 0.5,
         actions: [
           IconButton(
             icon: const Icon(Icons.bar_chart),
@@ -201,7 +205,7 @@ class _FeedList extends StatelessWidget {
     final dates = grouped.keys.toList();
 
     return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 80),
+      padding: const EdgeInsets.only(bottom: 24),
       itemCount: dates.length,
       itemBuilder: (context, index) {
         final date = dates[index];
@@ -228,12 +232,12 @@ class _DateHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
       child: Text(
         _formatDate(date),
         style: TextStyle(
           fontSize: 13,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: theme.colorScheme.primary,
         ),
       ),
@@ -256,116 +260,150 @@ class _FeedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final typeIcon = _typeIcon;
     final typeColor = _typeColor(theme);
 
-    return InkWell(
-      onTap: () => _navigate(context),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ChildAvatar(
-              name: event.childName,
-              avatarPath: event.childAvatarPath,
-              radius: 20,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        event.childName,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const Spacer(),
-                      if (event.timeRange != null)
-                        Text(
-                          event.timeRange!,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                    ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Material(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        elevation: 0.5,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+        child: InkWell(
+          onTap: () => _navigate(context),
+          borderRadius: BorderRadius.circular(12),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 4,
+                  decoration: BoxDecoration(
+                    color: typeColor,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      bottomLeft: Radius.circular(12),
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(typeIcon, size: 14, color: typeColor),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          event.title,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            ChildAvatar(
+                              name: event.childName,
+                              avatarPath: event.childAvatarPath,
+                              radius: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              event.childName,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const Spacer(),
+                            if (event.timeRange != null)
+                              Text(
+                                event.timeRange!,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                          ],
                         ),
-                      ),
-                      if (event.recordStatus != null)
-                        _StatusBadge(status: event.recordStatus!),
-                    ],
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: typeColor,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                event.title,
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            if (event.recordStatus != null)
+                              _StatusBadge(status: event.recordStatus!),
+                          ],
+                        ),
+                        if (event.subtitle != null &&
+                            event.subtitle!.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 14),
+                            child: Text(
+                              event.subtitle!,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (event.notes != null && event.notes!.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerLow,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border(
+                                left: BorderSide(
+                                  color: typeColor.withValues(alpha: 0.13),
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                            child: Text(
+                              event.notes!,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                height: 1.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (event.imagePaths.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          _PhotoGrid(
+                            imagePaths: event.imagePaths,
+                            onTap: (index) => PhotoViewerDialog.show(
+                              context,
+                              imagePaths: event.imagePaths,
+                              initialIndex: index,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                  if (event.subtitle != null && event.subtitle!.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      event.subtitle!,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                  if (event.notes != null && event.notes!.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerLow,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        event.notes!,
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ),
-                  ],
-                  if (event.imagePaths.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    _PhotoGrid(
-                      imagePaths: event.imagePaths,
-                      onTap: (index) => PhotoViewerDialog.show(
-                        context,
-                        imagePaths: event.imagePaths,
-                        initialIndex: index,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  IconData get _typeIcon => switch (event.type) {
-    'class_record' => Icons.school,
-    'achievement' => Icons.emoji_events,
-    'package' => Icons.inventory_2,
-    _ => Icons.circle,
-  };
-
   Color _typeColor(ThemeData theme) => switch (event.type) {
-    'class_record' => theme.colorScheme.primary,
-    'achievement' => theme.colorScheme.tertiary,
-    'package' => theme.colorScheme.secondary,
+    'class_record' => const Color(0xFF1890FF),
+    'achievement' => const Color(0xFFFAAD14),
+    'package' => const Color(0xFF52C41A),
     _ => theme.colorScheme.onSurfaceVariant,
   };
 
@@ -381,7 +419,7 @@ class _FeedCard extends StatelessWidget {
         }
       case 'package':
         if (event.courseId != null) {
-          context.push('/courses/${event.courseId}?tab=1');
+          context.push('/courses/${event.courseId}?tab=2');
         }
     }
   }

@@ -321,17 +321,28 @@ class _AchievementFormPageState extends ConsumerState<AchievementFormPage> {
     if (source == null) return;
 
     final picker = ImagePicker();
-    final xFile = await picker.pickImage(
-      source: source,
-      maxWidth: 1920,
-      maxHeight: 1920,
-      imageQuality: 85,
-    );
-    if (xFile == null) return;
-
-    setState(() {
-      _pendingPhotos.add(xFile.path);
-    });
+    if (source == ImageSource.camera) {
+      final xFile = await picker.pickImage(
+        source: source,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+      if (xFile == null) return;
+      setState(() {
+        _pendingPhotos.add(xFile.path);
+      });
+    } else {
+      final xFiles = await picker.pickMultiImage(
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+      if (xFiles.isEmpty) return;
+      setState(() {
+        _pendingPhotos.addAll(xFiles.map((f) => f.path));
+      });
+    }
   }
 
   Future<void> _saveAttachments(int achievementId) async {
@@ -707,6 +718,7 @@ class _DateField extends StatelessWidget {
           initialDate: date,
           firstDate: DateTime(2020),
           lastDate: DateTime(2035),
+          locale: const Locale('zh', 'CN'),
         );
         if (d != null) onPicked(d);
       },

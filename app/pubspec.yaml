@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # 状态管理
   flutter_riverpod: ^2.6.1
@@ -44,6 +46,11 @@ dependencies:
   device_info_plus: ^12.4.0
   http: ^1.6.0
   shared_preferences: ^2.5.5
+
+  # WebDAV 云端备份
+  xml: ^6.5.0
+  crypto: ^3.0.3
+  flutter_secure_storage: ^9.2.2
 
 dev_dependencies:
   flutter_test:

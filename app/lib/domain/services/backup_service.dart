@@ -9,20 +9,24 @@ import '../../data/database/app_database.dart';
 import '../../data/database/daos/export_dao.dart';
 import '../../data/files/backup_file_store.dart';
 import 'attachment_file_service.dart';
+import 'avatar_file_service.dart';
 
 /// 备份/恢复/导出业务服务。
 class BackupService {
   final AppDatabase _database;
   final BackupFileStore _fileStore;
   final AttachmentFileService _attachmentFileService;
+  final AvatarFileService _avatarFileService;
 
   BackupService({
     required AppDatabase database,
     required BackupFileStore fileStore,
     required AttachmentFileService attachmentFileService,
+    required AvatarFileService avatarFileService,
   }) : _database = database,
        _fileStore = fileStore,
-       _attachmentFileService = attachmentFileService;
+       _attachmentFileService = attachmentFileService,
+       _avatarFileService = avatarFileService;
 
   /// 创建完整备份，返回 zip 文件路径。
   Future<String> createBackup() async {
@@ -47,6 +51,17 @@ class BackupService {
       }
     }
 
+    final avatarsDir = await _avatarFileService.getAvatarsDirectory();
+    final avatarFiles = <String>[];
+    if (await avatarsDir.exists()) {
+      await for (final entity in avatarsDir.list(recursive: true)) {
+        if (entity is File) {
+          final relative = p.relative(entity.path, from: avatarsDir.path);
+          avatarFiles.add(relative.replaceAll('\\', '/'));
+        }
+      }
+    }
+
     final manifest = BackupManifest(
       format: 'class2data-backup',
       formatVersion: 1,
@@ -56,6 +71,7 @@ class BackupService {
       databaseFile: 'database/class2data.db',
       attachmentCount: attachmentFiles.length,
       attachmentFiles: attachmentFiles,
+      avatarFiles: avatarFiles,
     );
 
     final outputPath = await _fileStore.getBackupOutputPath();
@@ -64,9 +80,10 @@ class BackupService {
       attachmentsDir: attachmentsDir,
       manifest: manifest,
       outputPath: outputPath,
+      avatarsDir: avatarsDir,
     );
 
-    return outputPath;
+    return await _fileStore.moveToPublicStorage(outputPath);
   }
 
   /// 校验备份包。
@@ -85,12 +102,7 @@ class BackupService {
   }
 
   /// 执行恢复。
-  ///
-  /// [onDatabaseClosed] 关闭数据库后的回调，用于让 provider 层 invalidate。
-  Future<void> restoreBackup(
-    String zipPath, {
-    required Future<void> Function() onDatabaseClosed,
-  }) async {
+  Future<void> restoreBackup(String zipPath) async {
     final extractDir = await _fileStore.getTempExtractDir();
 
     try {
@@ -110,23 +122,22 @@ class BackupService {
       final newAttachmentsDir = Directory(
         p.join(extractDir.path, 'attachments'),
       );
+      final newAvatarsDir = Directory(p.join(extractDir.path, 'avatars'));
 
       final currentDbPath = await AppDatabase.getDatabasePath();
       final currentDbFile = File(currentDbPath);
       final currentAttachmentsDir = await _attachmentFileService
           .getAttachmentsDirectory();
+      final currentAvatarsDir = await _avatarFileService.getAvatarsDirectory();
 
       await _database.close();
-      await onDatabaseClosed();
 
       await _fileStore.replaceDatabase(currentDbFile, newDbFile);
       await _fileStore.replaceAttachments(
         currentAttachmentsDir,
         newAttachmentsDir,
       );
-    } catch (e) {
-      await onDatabaseClosed();
-      rethrow;
+      await _fileStore.replaceAttachments(currentAvatarsDir, newAvatarsDir);
     } finally {
       try {
         if (await extractDir.exists()) {

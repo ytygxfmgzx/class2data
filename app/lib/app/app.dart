@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'router.dart';
 import 'theme.dart';
@@ -14,6 +15,13 @@ class Class2DataApp extends ConsumerWidget {
       title: '课小记',
       theme: AppTheme.light,
       routerConfig: router,
+      locale: const Locale('zh', 'CN'),
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('zh', 'CN')],
     );
   }
 }

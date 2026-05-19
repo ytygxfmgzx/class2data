@@ -13,6 +13,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 
 /// 记录上课底部弹层。
 ///
@@ -31,13 +32,17 @@ class _ClassRecordBottomSheetState
     extends ConsumerState<ClassRecordBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   final _creditsController = TextEditingController();
-  final _durationController = TextEditingController();
   final _notesController = TextEditingController();
 
   String _status = 'attended';
   int? _selectedPackageId;
   bool _isLoading = false;
   final List<String> _pendingPhotos = [];
+
+  late String _classDate;
+  late String _startTime;
+  late String _endTime;
+  int? _defaultDurationMinutes;
 
   static const _statusOptions = [
     ('attended', '已上课'),
@@ -47,13 +52,58 @@ class _ClassRecordBottomSheetState
     ('makeup', '补课'),
   ];
 
+  static const _statusColors = <String, ({Color fg, Color bg})>{
+    'attended': (fg: Color(0xFF52C41A), bg: Color(0xFFF6FFED)),
+    'leave': (fg: Color(0xFF999999), bg: Color(0x00000000)),
+    'cancelled': (fg: Color(0xFF999999), bg: Color(0x00000000)),
+    'absent': (fg: Color(0xFFF5222D), bg: Color(0xFFFFF1F0)),
+    'makeup': (fg: Color(0xFF1890FF), bg: Color(0xFFE6F7FF)),
+  };
+
+  static const _statusIcons = <String, IconData>{
+    'attended': Icons.check_circle_outline,
+    'leave': Icons.pause_circle_outline,
+    'cancelled': Icons.cancel_outlined,
+    'absent': Icons.error_outline,
+    'makeup': Icons.replay_circle_filled_outlined,
+  };
+
   bool get _shouldDeductCredits =>
       _status == 'attended' || _status == 'makeup' || _status == 'absent';
 
   @override
   void initState() {
     super.initState();
+    _classDate = widget.occurrence.date;
+    _startTime = widget.occurrence.startTime;
+    _endTime = widget.occurrence.endTime;
     _loadDefaults();
+  }
+
+  static String _computeEndTimeFromStart(
+    String startTime,
+    int durationMinutes,
+  ) {
+    final start = _parseTime(startTime);
+    if (start == null) return startTime;
+    final end = start.add(Duration(minutes: durationMinutes));
+    return DateFormat('HH:mm').format(end);
+  }
+
+  static TimeOfDay? _parseTimeOfDay(String hhmm) {
+    final parts = hhmm.split(':');
+    if (parts.length != 2) return null;
+    return TimeOfDay(
+      hour: int.tryParse(parts[0]) ?? 0,
+      minute: int.tryParse(parts[1]) ?? 0,
+    );
+  }
+
+  static DateTime? _parseTime(String hhmm) {
+    final tod = _parseTimeOfDay(hhmm);
+    if (tod == null) return null;
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day, tod.hour, tod.minute);
   }
 
   Future<void> _loadDefaults() async {
@@ -108,7 +158,11 @@ class _ClassRecordBottomSheetState
           );
         }
         if (defaults.durationMinutes != null) {
-          _durationController.text = '${defaults.durationMinutes}';
+          _defaultDurationMinutes = defaults.durationMinutes;
+          _endTime = _computeEndTimeFromStart(
+            _startTime,
+            defaults.durationMinutes!,
+          );
         }
         _selectedPackageId = recommendedPkg ?? defaults.packageId;
       });
@@ -118,7 +172,6 @@ class _ClassRecordBottomSheetState
   @override
   void dispose() {
     _creditsController.dispose();
-    _durationController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -141,8 +194,11 @@ class _ClassRecordBottomSheetState
     }
 
     int? durationMinutes;
-    if (_durationController.text.trim().isNotEmpty) {
-      durationMinutes = int.tryParse(_durationController.text.trim());
+    final startDt = _parseTime(_startTime);
+    final endDt = _parseTime(_endTime);
+    if (startDt != null && endDt != null) {
+      durationMinutes = endDt.difference(startDt).inMinutes;
+      if (durationMinutes < 0) durationMinutes += 24 * 60;
     }
 
     final record = ClassRecordsCompanion(
@@ -153,9 +209,9 @@ class _ClassRecordBottomSheetState
       status: Value(_status),
       classType: Value(widget.occurrence.classType),
       classNameSnapshot: Value(widget.occurrence.classNameSnapshot),
-      classDate: Value(widget.occurrence.date),
-      startTime: Value(widget.occurrence.startTime),
-      endTime: Value(widget.occurrence.endTime),
+      classDate: Value(_classDate),
+      startTime: Value(_startTime),
+      endTime: Value(_endTime),
       durationMinutes: Value(durationMinutes),
       creditUnitsCost: Value(creditUnitsCost ?? 0),
       packageId: Value(_shouldDeductCredits ? _selectedPackageId : null),
@@ -164,10 +220,10 @@ class _ClassRecordBottomSheetState
           : Value(widget.occurrence.occurrenceKey),
       scheduleOccurrenceDate: isManual
           ? const Value.absent()
-          : Value(widget.occurrence.date),
+          : Value(_classDate),
       scheduleOccurrenceStartTime: isManual
           ? const Value.absent()
-          : Value(widget.occurrence.startTime),
+          : Value(_startTime),
       notes: Value(
         _notesController.text.trim().isEmpty
             ? null
@@ -234,17 +290,28 @@ class _ClassRecordBottomSheetState
     if (source == null) return;
 
     final picker = ImagePicker();
-    final xFile = await picker.pickImage(
-      source: source,
-      maxWidth: 1920,
-      maxHeight: 1920,
-      imageQuality: 85,
-    );
-    if (xFile == null) return;
-
-    setState(() {
-      _pendingPhotos.add(xFile.path);
-    });
+    if (source == ImageSource.camera) {
+      final xFile = await picker.pickImage(
+        source: source,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+      if (xFile == null) return;
+      setState(() {
+        _pendingPhotos.add(xFile.path);
+      });
+    } else {
+      final xFiles = await picker.pickMultiImage(
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+      if (xFiles.isEmpty) return;
+      setState(() {
+        _pendingPhotos.addAll(xFiles.map((f) => f.path));
+      });
+    }
   }
 
   Future<void> _saveAttachments(int recordId) async {
@@ -315,23 +382,11 @@ class _ClassRecordBottomSheetState
             child: Row(
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.occurrence.classNameSnapshot ?? '记录上课',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        '${widget.occurrence.date}  ${widget.occurrence.startTime}-${widget.occurrence.endTime}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    widget.occurrence.classNameSnapshot ?? '记录上课',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 TextButton(
@@ -351,110 +406,179 @@ class _ClassRecordBottomSheetState
                 padding: const EdgeInsets.all(16),
                 children: [
                   // 状态选择
-                  const _Label(label: '状态'),
-                  const SizedBox(height: 4),
-                  SegmentedButton<String>(
-                    segments: _statusOptions
-                        .map(
-                          (e) => ButtonSegment(
-                            value: e.$1,
-                            label: Text(
-                              e.$2,
-                              style: const TextStyle(fontSize: 12),
+                  Row(
+                    children: _statusOptions.map((opt) {
+                      final isSelected = _status == opt.$1;
+                      final colors = _statusColors[opt.$1]!;
+                      final icon = _statusIcons[opt.$1]!;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 4),
+                        child: GestureDetector(
+                          onTap: () => setState(() => _status = opt.$1),
+                          child: Container(
+                            height: 32,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: isSelected
+                                    ? colors.fg
+                                    : const Color(0xFFE8E8E8),
+                              ),
+                              color: isSelected ? colors.bg : Colors.white,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  icon,
+                                  size: 16,
+                                  color: isSelected
+                                      ? colors.fg
+                                      : const Color(0xFF666666),
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  opt.$2,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w500
+                                        : null,
+                                    color: isSelected
+                                        ? colors.fg
+                                        : const Color(0xFF666666),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        )
-                        .toList(),
-                    selected: {_status},
-                    onSelectionChanged: (v) =>
-                        setState(() => _status = v.first),
+                        ),
+                      );
+                    }).toList(),
                   ),
                   const SizedBox(height: 16),
 
-                  // 课时和时长（扣课时状态才显示）
+                  // 上课日期
+                  const _Label(label: '上课日期'),
+                  const SizedBox(height: 4),
+                  _DatePickerField(
+                    dateText: _classDate,
+                    onDateChanged: (d) {
+                      setState(() => _classDate = d);
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 上课时间：开始 — 结束
+                  const _Label(label: '上课时间'),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _TimePickerField(
+                          timeText: _startTime,
+                          onTimeChanged: (t) {
+                            setState(() {
+                              _startTime = t;
+                              if (_defaultDurationMinutes != null) {
+                                _endTime = _computeEndTimeFromStart(
+                                  t,
+                                  _defaultDurationMinutes!,
+                                );
+                              }
+                            });
+                          },
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          '—',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: _TimePickerField(
+                          timeText: _endTime,
+                          onTimeChanged: (t) {
+                            setState(() => _endTime = t);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 课时和课包（扣课时状态才显示）
                   if (_shouldDeductCredits) ...[
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Expanded(
+                        // 课时步进器（1/3 宽度）
+                        SizedBox(
+                          width: (MediaQuery.of(context).size.width - 44) / 3,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const _Label(label: '课时'),
                               const SizedBox(height: 4),
-                              TextFormField(
-                                controller: _creditsController,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  hintText: '1',
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 10,
-                                  ),
-                                ),
-                              ),
+                              _CreditsStepper(controller: _creditsController),
                             ],
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 12),
+                        // 课包选择（2/3 宽度）
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const _Label(label: '时长（分钟）'),
+                              const _Label(label: '课包'),
                               const SizedBox(height: 4),
-                              TextFormField(
-                                controller: _durationController,
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  hintText: '60',
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 10,
-                                  ),
-                                ),
+                              packagesAsync.when(
+                                loading: () => const LinearProgressIndicator(),
+                                error: (_, _) => const Text('加载课包失败'),
+                                data: (result) => switch (result) {
+                                  Ok(:final value) =>
+                                    DropdownButtonFormField<int>(
+                                      initialValue: _selectedPackageId,
+                                      isExpanded: true,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Color(0xFF1A1A1A),
+                                      ),
+                                      decoration: const InputDecoration(
+                                        border: OutlineInputBorder(),
+                                        hintText: '选择课包',
+                                        contentPadding: EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 10,
+                                        ),
+                                      ),
+                                      items: value
+                                          .map(
+                                            (p) => DropdownMenuItem(
+                                              value: p.id,
+                                              child: _PackageDropdownLabel(
+                                                package: p,
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
+                                      onChanged: (v) => setState(
+                                        () => _selectedPackageId = v,
+                                      ),
+                                    ),
+                                  Err() => const Text('加载课包失败'),
+                                },
                               ),
                             ],
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // 课包选择
-                    const _Label(label: '扣课包'),
-                    const SizedBox(height: 4),
-                    packagesAsync.when(
-                      loading: () => const LinearProgressIndicator(),
-                      error: (_, _) => const Text('加载课包失败'),
-                      data: (result) => switch (result) {
-                        Ok(:final value) => DropdownButtonFormField<int>(
-                          initialValue: _selectedPackageId,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            hintText: '选择课包',
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                          ),
-                          items: value
-                              .map(
-                                (p) => DropdownMenuItem(
-                                  value: p.id,
-                                  child: _PackageDropdownLabel(package: p),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (v) =>
-                              setState(() => _selectedPackageId = v),
-                        ),
-                        Err() => const Text('加载课包失败'),
-                      },
                     ),
                     const SizedBox(height: 16),
                   ],
@@ -465,6 +589,7 @@ class _ClassRecordBottomSheetState
                   TextFormField(
                     controller: _notesController,
                     maxLines: 2,
+                    style: const TextStyle(fontSize: 14),
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       hintText: '可选',
@@ -646,7 +771,7 @@ class _PackageDropdownLabel extends StatelessWidget {
 
     final hasValidity = package.validFrom != null || package.validUntil != null;
     if (!hasValidity) {
-      return Text(name, style: const TextStyle(fontSize: 13));
+      return Text(name, style: const TextStyle(fontSize: 14));
     }
 
     final status = bs.periodPackageStatusLabel(
@@ -671,10 +796,9 @@ class _PackageDropdownLabel extends StatelessWidget {
     };
 
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
-        Flexible(child: Text(name, style: const TextStyle(fontSize: 13))),
-        const SizedBox(width: 6),
+        Flexible(child: Text(name, style: const TextStyle(fontSize: 14))),
+        const SizedBox(width: 4),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
           decoration: BoxDecoration(
@@ -684,6 +808,214 @@ class _PackageDropdownLabel extends StatelessWidget {
           child: Text(status, style: TextStyle(fontSize: 10, color: fg)),
         ),
       ],
+    );
+  }
+}
+
+class _DatePickerField extends StatelessWidget {
+  final String dateText;
+  final ValueChanged<String> onDateChanged;
+
+  const _DatePickerField({required this.dateText, required this.onDateChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () async {
+        final initial = DateTime.tryParse(dateText) ?? DateTime.now();
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: initial,
+          firstDate: DateTime(2020),
+          lastDate: DateTime(2100),
+        );
+        if (picked != null) {
+          onDateChanged(
+            '${picked.year.toString().padLeft(4, '0')}-'
+            '${picked.month.toString().padLeft(2, '0')}-'
+            '${picked.day.toString().padLeft(2, '0')}',
+          );
+        }
+      },
+      borderRadius: BorderRadius.circular(4),
+      child: InputDecorator(
+        decoration: const InputDecoration(
+          border: OutlineInputBorder(),
+          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          suffixIcon: Icon(Icons.calendar_today, size: 18),
+        ),
+        child: Text(
+          _formatDate(dateText),
+          style: TextStyle(
+            fontSize: 14,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+      ),
+    );
+  }
+
+  static String _formatDate(String dateStr) {
+    final d = DateTime.tryParse(dateStr);
+    if (d == null) return dateStr;
+    final weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+    return '${DateFormat('yyyy-MM-dd').format(d)} ${weekdays[d.weekday - 1]}';
+  }
+}
+
+class _TimePickerField extends StatelessWidget {
+  final String timeText;
+  final ValueChanged<String> onTimeChanged;
+
+  const _TimePickerField({required this.timeText, required this.onTimeChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () async {
+        final parts = timeText.split(':');
+        final initial = TimeOfDay(
+          hour: int.tryParse(parts.elementAtOrNull(0) ?? '') ?? 0,
+          minute: int.tryParse(parts.elementAtOrNull(1) ?? '') ?? 0,
+        );
+        final picked = await showTimePicker(
+          context: context,
+          initialTime: initial,
+        );
+        if (picked != null) {
+          onTimeChanged(
+            '${picked.hour.toString().padLeft(2, '0')}:'
+            '${picked.minute.toString().padLeft(2, '0')}',
+          );
+        }
+      },
+      borderRadius: BorderRadius.circular(4),
+      child: InputDecorator(
+        decoration: const InputDecoration(
+          border: OutlineInputBorder(),
+          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          suffixIcon: Icon(Icons.access_time, size: 18),
+        ),
+        child: Text(
+          timeText,
+          style: TextStyle(
+            fontSize: 14,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CreditsStepper extends StatefulWidget {
+  final TextEditingController controller;
+
+  const _CreditsStepper({required this.controller});
+
+  @override
+  State<_CreditsStepper> createState() => _CreditsStepperState();
+}
+
+class _CreditsStepperState extends State<_CreditsStepper> {
+  late final _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.controller.text.isEmpty) {
+      widget.controller.text = '1';
+    }
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _step(double delta) {
+    final current = double.tryParse(widget.controller.text) ?? 0;
+    final next = (current + delta).clamp(0.5, 99);
+    widget.controller.text = next == next.roundToDouble()
+        ? '${next.toInt()}'
+        : next.toStringAsFixed(1);
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final outlineColor = theme.colorScheme.outline;
+    const buttonSize = 36.0;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(color: outlineColor),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: SizedBox(
+        height: 48,
+        child: Row(
+          children: [
+            SizedBox(
+              width: buttonSize,
+              child: IconButton(
+                onPressed: () => _step(-0.5),
+                icon: const Icon(Icons.remove, size: 18),
+                padding: EdgeInsets.zero,
+                style: IconButton.styleFrom(
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  minimumSize: const Size(buttonSize, buttonSize),
+                  padding: EdgeInsets.zero,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(4),
+                      bottomLeft: Radius.circular(4),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: TextField(
+                controller: widget.controller,
+                focusNode: _focusNode,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 14),
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  isDense: true,
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+            ),
+            SizedBox(
+              width: buttonSize,
+              child: IconButton(
+                onPressed: () => _step(0.5),
+                icon: const Icon(Icons.add, size: 18),
+                padding: EdgeInsets.zero,
+                style: IconButton.styleFrom(
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  minimumSize: const Size(buttonSize, buttonSize),
+                  padding: EdgeInsets.zero,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topRight: Radius.circular(4),
+                      bottomRight: Radius.circular(4),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

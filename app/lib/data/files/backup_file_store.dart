@@ -6,6 +6,8 @@ import 'package:archive/archive.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'backup_storage_channel.dart';
+
 /// 备份 manifest 数据结构。
 class BackupManifest {
   final String format;
@@ -16,6 +18,7 @@ class BackupManifest {
   final String databaseFile;
   final int attachmentCount;
   final List<String> attachmentFiles;
+  final List<String> avatarFiles;
 
   const BackupManifest({
     required this.format,
@@ -26,6 +29,7 @@ class BackupManifest {
     required this.databaseFile,
     required this.attachmentCount,
     required this.attachmentFiles,
+    this.avatarFiles = const [],
   });
 
   factory BackupManifest.fromJson(Map<String, dynamic> json) {
@@ -38,6 +42,9 @@ class BackupManifest {
       databaseFile: json['databaseFile'] as String,
       attachmentCount: json['attachmentCount'] as int,
       attachmentFiles: List<String>.from(json['attachmentFiles'] as List),
+      avatarFiles: json['avatarFiles'] != null
+          ? List<String>.from(json['avatarFiles'] as List)
+          : [],
     );
   }
 
@@ -50,6 +57,7 @@ class BackupManifest {
     'databaseFile': databaseFile,
     'attachmentCount': attachmentCount,
     'attachmentFiles': attachmentFiles,
+    if (avatarFiles.isNotEmpty) 'avatarFiles': avatarFiles,
   };
 }
 
@@ -66,11 +74,27 @@ class BackupValidation {
   });
 }
 
+/// 备份文件信息（用于展示最近备份）。
+class BackupFileInfo {
+  final String path;
+  final String name;
+  final int size;
+  final DateTime modifiedTime;
+
+  const BackupFileInfo({
+    required this.path,
+    required this.name,
+    required this.size,
+    required this.modifiedTime,
+  });
+}
+
 /// 备份文件操作层。
 ///
 /// 负责 zip 打包/解包、manifest 读写和文件系统操作。
 class BackupFileStore {
   static const _backupDirName = 'backup_temp';
+  final BackupStorageChannel _storageChannel = BackupStorageChannel();
 
   /// 获取临时解压目录。
   Future<Directory> getTempExtractDir() async {
@@ -89,6 +113,7 @@ class BackupFileStore {
     required Directory attachmentsDir,
     required BackupManifest manifest,
     required String outputPath,
+    Directory? avatarsDir,
   }) async {
     final archive = Archive();
 
@@ -107,6 +132,11 @@ class BackupFileStore {
     // 添加附件文件
     if (await attachmentsDir.exists()) {
       await _addDirectoryToArchive(archive, attachmentsDir, 'attachments');
+    }
+
+    // 添加头像文件
+    if (avatarsDir != null && await avatarsDir.exists()) {
+      await _addDirectoryToArchive(archive, avatarsDir, 'avatars');
     }
 
     // 编码为 zip 并写入文件
@@ -283,7 +313,7 @@ class BackupFileStore {
     }
   }
 
-  /// 获取备份输出文件路径。
+  /// 获取备份输出文件路径（临时目录，用于 ZIP 生成）。
   Future<String> getBackupOutputPath() async {
     final tempDir = await getTemporaryDirectory();
     final now = DateTime.now();
@@ -300,5 +330,70 @@ class BackupFileStore {
   Future<String> getExportPath(String filename) async {
     final tempDir = await getTemporaryDirectory();
     return p.join(tempDir.path, filename);
+  }
+
+  /// 将备份文件保存到用户可访问的公共目录，返回公共路径。
+  Future<String> moveToPublicStorage(String tempZipPath) async {
+    final fileName = p.basename(tempZipPath);
+    if (Platform.isAndroid) {
+      return await _storageChannel.saveToDownloads(fileName, tempZipPath);
+    } else if (Platform.isIOS) {
+      final docsDir = await getApplicationDocumentsDirectory();
+      final backupDir = Directory(p.join(docsDir.path, 'kexiaoji', 'backup'));
+      await backupDir.create(recursive: true);
+      final publicPath = p.join(backupDir.path, fileName);
+      await File(tempZipPath).copy(publicPath);
+      return publicPath;
+    } else {
+      return tempZipPath;
+    }
+  }
+
+  /// 获取备份公共目录路径。
+  Future<String> getBackupPublicDirPath() async {
+    if (Platform.isAndroid) {
+      return await _storageChannel.getBackupDirPath();
+    } else if (Platform.isIOS) {
+      final docsDir = await getApplicationDocumentsDirectory();
+      return p.join(docsDir.path, 'kexiaoji', 'backup');
+    } else {
+      return '';
+    }
+  }
+
+  /// 打开备份目录。
+  Future<bool> openBackupDirectory(String dirPath) async {
+    if (Platform.isAndroid) {
+      return await _storageChannel.openInFileManager(dirPath);
+    }
+    return false;
+  }
+
+  /// 获取备份目录中最新备份文件信息。
+  Future<BackupFileInfo?> getLatestBackup() async {
+    final dirPath = await getBackupPublicDirPath();
+    if (dirPath.isEmpty) return null;
+    final dir = Directory(dirPath);
+    if (!await dir.exists()) return null;
+
+    File? latest;
+    DateTime? latestTime;
+    await for (final entity in dir.list()) {
+      if (entity is File && entity.path.endsWith('.zip')) {
+        final stat = await entity.stat();
+        if (latestTime == null || stat.modified.isAfter(latestTime)) {
+          latest = entity;
+          latestTime = stat.modified;
+        }
+      }
+    }
+    if (latest == null) return null;
+    final stat = await latest.stat();
+    return BackupFileInfo(
+      path: latest.path,
+      name: p.basename(latest.path),
+      size: stat.size,
+      modifiedTime: stat.modified,
+    );
   }
 }

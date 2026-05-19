@@ -771,16 +771,27 @@ class _QuickAddMenu extends ConsumerWidget {
       ).showSnackBar(const SnackBar(content: Text('请先添加课程')));
       return;
     }
-    final selected = await showDialog<KidCourse>(
+    final selected = await _showUnifiedBottomSheet<KidCourse>(
       context: context,
-      builder: (ctx) => _SimplePickerDialog<KidCourse>(
-        title: '选择课程',
-        items: courses,
-        labelBuilder: (c) {
-          final child = children.where((ch) => ch.id == c.childId).firstOrNull;
-          return child != null ? '${c.name} · ${child.name}' : c.name;
-        },
-      ),
+      title: '选择课程',
+      items: courses,
+      itemBuilder: (c) {
+        final child = children.where((ch) => ch.id == c.childId).firstOrNull;
+        return ListTile(
+          leading: child != null
+              ? ChildAvatar(
+                  name: child.name,
+                  avatarPath: child.avatarPath,
+                  radius: 18,
+                )
+              : null,
+          title: Text(
+            child != null ? '${child.name} · ${c.name}' : c.name,
+            overflow: TextOverflow.ellipsis,
+          ),
+          onTap: () => Navigator.pop(context, c),
+        );
+      },
     );
     if (selected == null || !context.mounted) return;
 
@@ -812,33 +823,27 @@ class _QuickAddMenu extends ConsumerWidget {
       ).showSnackBar(const SnackBar(content: Text('请先添加课程')));
       return;
     }
-    final selected = await showDialog<KidCourse>(
+    final selected = await _showUnifiedBottomSheet<KidCourse>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('选择课程'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: courses.map((c) {
-              final child = children
-                  .where((ch) => ch.id == c.childId)
-                  .firstOrNull;
-              return ListTile(
-                leading: child != null
-                    ? ChildAvatar(
-                        name: child.name,
-                        avatarPath: child.avatarPath,
-                        radius: 16,
-                      )
-                    : null,
-                title: Text(c.name),
-                subtitle: child != null ? Text(child.name) : null,
-                onTap: () => Navigator.pop(ctx, c),
-              );
-            }).toList(),
+      title: '选择课程',
+      items: courses,
+      itemBuilder: (c) {
+        final child = children.where((ch) => ch.id == c.childId).firstOrNull;
+        return ListTile(
+          leading: child != null
+              ? ChildAvatar(
+                  name: child.name,
+                  avatarPath: child.avatarPath,
+                  radius: 18,
+                )
+              : null,
+          title: Text(
+            child != null ? '${child.name} · ${c.name}' : c.name,
+            overflow: TextOverflow.ellipsis,
           ),
-        ),
-      ),
+          onTap: () => Navigator.pop(context, c),
+        );
+      },
     );
     if (selected != null && context.mounted) {
       await context.push('/courses/${selected.id}/packages/add');
@@ -856,9 +861,19 @@ class _QuickAddMenu extends ConsumerWidget {
     if (children.length == 1) {
       selected = children.first;
     } else {
-      selected = await showDialog<ChildrenData>(
+      selected = await _showUnifiedBottomSheet<ChildrenData>(
         context: context,
-        builder: (ctx) => _ChildPickerDialog(children: children),
+        title: '选择孩子',
+        items: children,
+        itemBuilder: (child) => ListTile(
+          leading: ChildAvatar(
+            name: child.name,
+            avatarPath: child.avatarPath,
+            radius: 18,
+          ),
+          title: Text(child.name, overflow: TextOverflow.ellipsis),
+          onTap: () => Navigator.pop(context, child),
+        ),
       );
     }
     if (selected != null && context.mounted) {
@@ -867,69 +882,29 @@ class _QuickAddMenu extends ConsumerWidget {
   }
 }
 
-// ─── 通用选择对话框 ───
+// ─── 通用底部弹窗 ───
 
-class _SimplePickerDialog<T> extends StatelessWidget {
-  final String title;
-  final List<T> items;
-  final String Function(T) labelBuilder;
-
-  const _SimplePickerDialog({
-    required this.title,
-    required this.items,
-    required this.labelBuilder,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(title),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: items
-              .map(
-                (item) => ListTile(
-                  title: Text(labelBuilder(item)),
-                  onTap: () => Navigator.pop(context, item),
-                ),
-              )
-              .toList(),
-        ),
+Future<T?> _showUnifiedBottomSheet<T>({
+  required BuildContext context,
+  required String title,
+  required List<T> items,
+  required Widget Function(T item) itemBuilder,
+}) {
+  return showModalBottomSheet<T>(
+    context: context,
+    builder: (ctx) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(title, style: Theme.of(ctx).textTheme.titleLarge),
+          ),
+          ...items.map(itemBuilder),
+        ],
       ),
-    );
-  }
-}
-
-class _ChildPickerDialog extends StatelessWidget {
-  final List<ChildrenData> children;
-
-  const _ChildPickerDialog({required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('选择孩子'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: children
-              .map(
-                (child) => ListTile(
-                  leading: ChildAvatar(
-                    name: child.name,
-                    avatarPath: child.avatarPath,
-                    radius: 18,
-                  ),
-                  title: Text(child.name),
-                  onTap: () => Navigator.pop(context, child),
-                ),
-              )
-              .toList(),
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }
 
 // ─── 月份/周导航 ───

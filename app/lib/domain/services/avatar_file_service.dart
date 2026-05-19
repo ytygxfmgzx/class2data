@@ -11,7 +11,7 @@ class AvatarFileService {
 
   AvatarFileService._();
 
-  Future<Directory> _getAvatarsDirectory() async {
+  Future<Directory> getAvatarsDirectory() async {
     final appDir = await getDatabaseDir();
     final dir = Directory(p.join(appDir.path, _avatarsDir));
     if (!await dir.exists()) {
@@ -21,7 +21,7 @@ class AvatarFileService {
   }
 
   Future<String> saveAvatar(int childId, String sourcePath) async {
-    final dir = await _getAvatarsDirectory();
+    final dir = await getAvatarsDirectory();
     final extension = p.extension(sourcePath);
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final fileName = 'child_${childId}_$timestamp$extension';

@@ -37,6 +37,8 @@ class _PackageFormPageState extends ConsumerState<PackageFormPage> {
   DateTime? _validUntil;
   bool _isLoading = false;
   final List<String> _pendingPhotos = [];
+  final List<String> _existingPhotos = [];
+  final List<int> _existingPhotoIds = [];
 
   bool get _isEditing => widget.packageId != null;
 
@@ -77,6 +79,47 @@ class _PackageFormPageState extends ConsumerState<PackageFormPage> {
         }
       case Err():
         break;
+    }
+    await _loadExistingPhotos();
+  }
+
+  Future<void> _loadExistingPhotos() async {
+    if (widget.packageId == null) return;
+    final fileService = ref.read(attachmentFileServiceProvider);
+    final attachRepo = ref.read(attachmentRepositoryProvider);
+    final result = await attachRepo.getByOwnerIds('package', [
+      widget.packageId!,
+    ]);
+    final attachments = switch (result) {
+      Ok(:final value) => value,
+      Err() => <Attachment>[],
+    };
+    final paths = <String>[];
+    final ids = <int>[];
+    for (final a in attachments) {
+      final path = await fileService.getAbsolutePath(a.relativePath);
+      if (File(path).existsSync()) {
+        paths.add(path);
+        ids.add(a.id);
+      }
+    }
+    if (mounted && paths.isNotEmpty) {
+      setState(() {
+        _existingPhotos.addAll(paths);
+        _existingPhotoIds.addAll(ids);
+      });
+    }
+  }
+
+  Future<void> _removeExistingPhoto(int index) async {
+    final attachId = _existingPhotoIds[index];
+    final attachRepo = ref.read(attachmentRepositoryProvider);
+    await attachRepo.deleteAttachment(attachId);
+    if (mounted) {
+      setState(() {
+        _existingPhotos.removeAt(index);
+        _existingPhotoIds.removeAt(index);
+      });
     }
   }
 
@@ -303,6 +346,14 @@ class _PackageFormPageState extends ConsumerState<PackageFormPage> {
               spacing: 8,
               runSpacing: 8,
               children: [
+                ..._existingPhotos.indexed.map((entry) {
+                  final index = entry.$1;
+                  final path = entry.$2;
+                  return _PackagePhotoThumb(
+                    path: path,
+                    onRemove: () => _removeExistingPhoto(index),
+                  );
+                }),
                 ..._pendingPhotos.indexed.map((entry) {
                   final index = entry.$1;
                   final path = entry.$2;
@@ -347,17 +398,28 @@ class _PackageFormPageState extends ConsumerState<PackageFormPage> {
     if (source == null) return;
 
     final picker = ImagePicker();
-    final xFile = await picker.pickImage(
-      source: source,
-      maxWidth: 1920,
-      maxHeight: 1920,
-      imageQuality: 85,
-    );
-    if (xFile == null) return;
-
-    setState(() {
-      _pendingPhotos.add(xFile.path);
-    });
+    if (source == ImageSource.camera) {
+      final xFile = await picker.pickImage(
+        source: source,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+      if (xFile == null) return;
+      setState(() {
+        _pendingPhotos.add(xFile.path);
+      });
+    } else {
+      final xFiles = await picker.pickMultiImage(
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+      if (xFiles.isEmpty) return;
+      setState(() {
+        _pendingPhotos.addAll(xFiles.map((f) => f.path));
+      });
+    }
   }
 
   Future<void> _saveAttachments(int packageId) async {
@@ -434,6 +496,7 @@ class _DateField extends StatelessWidget {
           initialDate: date ?? DateTime.now(),
           firstDate: DateTime(2020),
           lastDate: DateTime(2035),
+          locale: const Locale('zh', 'CN'),
         );
         if (d != null) onPicked(d);
       },
@@ -747,17 +810,28 @@ class _PackageFormBottomSheetState
     if (source == null) return;
 
     final picker = ImagePicker();
-    final xFile = await picker.pickImage(
-      source: source,
-      maxWidth: 1920,
-      maxHeight: 1920,
-      imageQuality: 85,
-    );
-    if (xFile == null) return;
-
-    setState(() {
-      _pendingPhotos.add(xFile.path);
-    });
+    if (source == ImageSource.camera) {
+      final xFile = await picker.pickImage(
+        source: source,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+      if (xFile == null) return;
+      setState(() {
+        _pendingPhotos.add(xFile.path);
+      });
+    } else {
+      final xFiles = await picker.pickMultiImage(
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+      if (xFiles.isEmpty) return;
+      setState(() {
+        _pendingPhotos.addAll(xFiles.map((f) => f.path));
+      });
+    }
   }
 
   Future<void> _saveAttachments(int packageId) async {

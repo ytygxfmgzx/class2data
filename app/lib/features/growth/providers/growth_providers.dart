@@ -346,10 +346,18 @@ final growthFeedProvider = FutureProvider<List<GrowthFeedEvent>>((ref) async {
         achievementIds,
       );
 
+      final achievementRepo = ref.read(achievementRepositoryProvider);
       for (final a in achievements) {
         final course = a.kidCourseId != null
             ? courses.where((c) => c.id == a.kidCourseId).firstOrNull
             : null;
+        final paymentResult = await achievementRepo.getPaymentByAchievementId(
+          a.id,
+        );
+        final payment = switch (paymentResult) {
+          Ok(:final value) => value,
+          Err() => null,
+        };
         events.add(
           GrowthFeedEvent(
             sortDateTime: _parseDate(a.achievementDate),
@@ -359,8 +367,8 @@ final growthFeedProvider = FutureProvider<List<GrowthFeedEvent>>((ref) async {
             childAvatarPath: child.avatarPath,
             courseId: course?.id,
             courseName: course?.name,
-            title: a.typeNameSnapshot ?? '成长记录',
-            subtitle: _achievementSubtitle(a, course),
+            title: _achievementTitle(a, course),
+            subtitle: _achievementPaymentSubtitle(payment),
             notes: a.notes ?? a.description,
             imagePaths: attachmentMap[a.id] ?? [],
             achievementId: a.id,
@@ -406,8 +414,9 @@ final growthFeedProvider = FutureProvider<List<GrowthFeedEvent>>((ref) async {
             childAvatarPath: child.avatarPath,
             courseId: course?.id,
             courseName: course?.name,
-            title: '购入${formatter.packageTypeLabel(p.type)}',
-            subtitle: _packageSubtitle(p, course, formatter),
+            title:
+                '购入${course?.name ?? ''}${formatter.packageTypeLabel(p.type)}',
+            subtitle: _packageSubtitle(p, formatter),
             notes: p.notes,
             imagePaths: attachmentMap[p.id] ?? [],
             packageId: p.id,
@@ -476,19 +485,24 @@ String? _classRecordSubtitle(ClassRecord r) {
   return parts.isEmpty ? null : parts.join(' · ');
 }
 
-String _achievementSubtitle(Achievement a, KidCourse? course) {
+String _achievementTitle(Achievement a, KidCourse? course) {
+  final base = a.typeNameSnapshot ?? '成长记录';
+  if (course != null) return '$base · ${course.name}';
+  return base;
+}
+
+String? _achievementPaymentSubtitle(Payment? payment) {
+  if (payment == null) return null;
   final parts = <String>[];
-  if (course != null) parts.add(course.name);
+  if (payment.typeNameSnapshot != null) {
+    parts.add(payment.typeNameSnapshot!);
+  }
+  parts.add(CreditBalanceFormatter().formatAmount(payment.amountCents));
   return parts.join(' · ');
 }
 
-String _packageSubtitle(
-  Package p,
-  KidCourse? course,
-  CreditBalanceFormatter formatter,
-) {
+String _packageSubtitle(Package p, CreditBalanceFormatter formatter) {
   final parts = <String>[];
-  if (course != null) parts.add(course.name);
   if (p.totalCredits != null) {
     parts.add('${formatter.formatCredits(p.totalCredits!)}课时');
   }
