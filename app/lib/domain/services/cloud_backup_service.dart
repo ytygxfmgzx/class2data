@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -116,6 +117,9 @@ class CloudBackupService {
     String deviceName, {
     void Function(CloudBackupProgress)? onProgress,
   }) async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    final appVersion = '${packageInfo.version}+${packageInfo.buildNumber}';
+
     // 1. 确保目录存在
     await client.ensureDirectory('/$_kexiaojiDir');
     await client.ensureDirectory('/$_kexiaojiDir/$_filesDir');
@@ -230,7 +234,7 @@ class CloudBackupService {
       deviceName: deviceName,
       lastModifiedTime: DateTime.now(),
       schemaVersion: _database.schemaVersion,
-      appVersion: '0.1.0+1',
+      appVersion: appVersion,
       databaseSize: dbBytes.length,
       databaseSha256: dbHash,
       files: manifestFiles,

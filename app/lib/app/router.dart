@@ -31,6 +31,7 @@ import 'package:class2data/features/packages/presentation/package_form_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -431,11 +432,20 @@ class _SettingsPage extends ConsumerWidget {
                 title: '意见反馈',
                 onTap: () => context.push('/feedback'),
               ),
-              _SettingsRow(
-                icon: Icons.info,
-                title: '版本',
-                value: 'v0.1.0',
-                onTap: () {},
+              FutureBuilder<PackageInfo>(
+                future: PackageInfo.fromPlatform(),
+                builder: (context, snapshot) {
+                  final version =
+                      snapshot.hasData
+                          ? 'v${snapshot.data!.version}'
+                          : '';
+                  return _SettingsRow(
+                    icon: Icons.info,
+                    title: '版本',
+                    value: version,
+                    onTap: () {},
+                  );
+                },
               ),
             ],
           ),
