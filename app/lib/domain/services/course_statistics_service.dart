@@ -86,10 +86,18 @@ class CourseStatisticsService {
     }
 
     for (final tx in transactions) {
-      if (tx.creditUnitsDelta > 0) {
-        purchasedCredits += tx.creditUnitsDelta;
-      } else {
-        consumedCredits += -tx.creditUnitsDelta;
+      switch (tx.type) {
+        case 'purchase':
+        case 'adjust':
+        case 'void':
+          purchasedCredits += tx.creditUnitsDelta;
+        case 'consume':
+        case 'refund':
+          if (tx.creditUnitsDelta < 0) {
+            consumedCredits += -tx.creditUnitsDelta;
+          }
+        default:
+          break;
       }
     }
 

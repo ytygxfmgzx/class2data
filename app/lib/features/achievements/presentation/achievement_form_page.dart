@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:class2data/core/result/result.dart';
 import 'package:class2data/data/database/app_database.dart';
+import 'package:class2data/domain/services/attachment_file_service.dart';
 import 'package:class2data/features/attachments/providers/attachment_providers.dart';
 import 'package:class2data/features/children/providers/child_providers.dart';
 import 'package:class2data/features/courses/providers/course_providers.dart';
@@ -351,14 +352,16 @@ class _AchievementFormPageState extends ConsumerState<AchievementFormPage> {
 
     for (final photoPath in _pendingPhotos) {
       try {
+        // 先读取源文件信息（复制后源文件会被删除）
+        final file = File(photoPath);
+        final fileName = photoPath.split('/').last.split('\\').last;
+        final fileSize = await file.length();
+
         final relativePath = await fileService.copyToPrivateDirectory(
           sourcePath: photoPath,
           ownerType: 'achievement',
           ownerId: achievementId,
         );
-        final file = File(photoPath);
-        final fileName = photoPath.split('/').last.split('\\').last;
-        final fileSize = await file.length();
 
         await attachRepo.insertAttachment(
           AttachmentsCompanion(
@@ -440,6 +443,12 @@ class _AchievementFormPageState extends ConsumerState<AchievementFormPage> {
     if (confirmed != true) return;
 
     setState(() => _isLoading = true);
+
+    await AttachmentFileService().deleteOwnerDirectory(
+      'achievement',
+      widget.achievementId!,
+    );
+
     final result = await ref
         .read(achievementRepositoryProvider)
         .deleteAchievement(widget.achievementId!);

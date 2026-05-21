@@ -93,4 +93,28 @@ class ClassRecordDao extends DatabaseAccessor<AppDatabase>
       creditTransactions,
     )..where((t) => t.classRecordId.equals(recordId))).go();
   }
+
+  /// 事务：更新上课记录 + 可选替换消耗流水
+  /// 先删除旧流水，再更新记录，最后插入新流水（如有）
+  Future<void> updateRecordWithCreditTransaction(
+    ClassRecordsCompanion record,
+    CreditTransactionsCompanion? creditTx,
+  ) {
+    return transaction(() async {
+      final recordId = record.id.value;
+      await (delete(
+        creditTransactions,
+      )..where((t) => t.classRecordId.equals(recordId))).go();
+
+      await (update(
+        classRecords,
+      )..where((t) => t.id.equals(recordId))).write(record);
+
+      if (creditTx != null) {
+        await into(
+          creditTransactions,
+        ).insert(creditTx.copyWith(classRecordId: Value(recordId)));
+      }
+    });
+  }
 }

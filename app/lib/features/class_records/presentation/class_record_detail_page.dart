@@ -8,42 +8,133 @@ import 'package:class2data/features/attachments/providers/attachment_providers.d
 import 'package:class2data/features/children/providers/child_providers.dart';
 import 'package:class2data/features/class_records/providers/class_record_providers.dart';
 import 'package:class2data/features/courses/providers/course_providers.dart';
+import 'package:class2data/features/home/providers/home_providers.dart';
 import 'package:class2data/features/packages/providers/package_providers.dart';
+import 'package:class2data/shared/providers/database_provider.dart';
 import 'package:class2data/shared/widgets/photo_viewer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-class ClassRecordDetailPage extends ConsumerWidget {
+class ClassRecordDetailPage extends ConsumerStatefulWidget {
   final int recordId;
 
   const ClassRecordDetailPage({super.key, required this.recordId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final recordAsync = ref.watch(classRecordByIdProvider(recordId));
+  ConsumerState<ClassRecordDetailPage> createState() =>
+      _ClassRecordDetailPageState();
+}
+
+class _ClassRecordDetailPageState extends ConsumerState<ClassRecordDetailPage> {
+  bool _isDeleting = false;
+
+  Future<void> _deleteRecord() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除记录'),
+        content: const Text('删除后不可恢复，关联的课时消耗将回退。确定要删除这条上课记录吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isDeleting = true);
+
+    try {
+      final recordId = widget.recordId;
+      final recordRepo = ref.read(classRecordRepositoryProvider);
+      final attachmentRepo = ref.read(attachmentRepositoryProvider);
+      final fileService = AttachmentFileService();
+
+      final attachmentsResult = await attachmentRepo.getByOwner(
+        'class_record',
+        recordId,
+      );
+      final attachments = switch (attachmentsResult) {
+        Ok(:final value) => value,
+        Err() => <Attachment>[],
+      };
+
+      await recordRepo.deleteTransactionsByRecordId(recordId);
+      await attachmentRepo.deleteByOwner('class_record', recordId);
+
+      for (final a in attachments) {
+        await fileService.deleteFile(a.relativePath);
+      }
+      await fileService.deleteOwnerDirectory('class_record', recordId);
+
+      await recordRepo.deleteRecord(recordId);
+
+      // 递增首页数据版本号，触发所有首页 provider 重新加载
+      if (mounted) {
+        ref.read(homeDataVersionProvider.notifier).state++;
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('记录已删除')));
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isDeleting = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('删除失败: $e')));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final recordAsync = ref.watch(classRecordByIdProvider(widget.recordId));
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('上课记录'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.delete_outline),
+            onPressed: _isDeleting ? null : _deleteRecord,
+          ),
+          IconButton(
             icon: const Icon(Icons.edit_outlined),
-            onPressed: () => context.push('/class-records/$recordId/edit'),
+            onPressed: _isDeleting
+                ? null
+                : () => context.push('/class-records/${widget.recordId}/edit'),
           ),
         ],
       ),
-      body: recordAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('加载失败: $e')),
-        data: (record) {
-          if (record == null) {
-            return const Center(child: Text('记录不存在'));
-          }
-          return _DetailContent(record: record, recordId: recordId);
-        },
-      ),
+      body: _isDeleting
+          ? const Center(child: CircularProgressIndicator())
+          : recordAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('加载失败: $e')),
+              data: (record) {
+                if (record == null) {
+                  return const Center(child: Text('记录不存在'));
+                }
+                return _DetailContent(
+                  record: record,
+                  recordId: widget.recordId,
+                );
+              },
+            ),
     );
   }
 }

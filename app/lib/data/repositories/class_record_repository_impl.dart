@@ -91,6 +91,19 @@ class ClassRecordRepositoryImpl implements ClassRecordRepository {
   }
 
   @override
+  Future<Result<void>> updateRecordWithCreditTransaction(
+    ClassRecordsCompanion record,
+    CreditTransactionsCompanion? creditTx,
+  ) async {
+    try {
+      await _dao.updateRecordWithCreditTransaction(record, creditTx);
+      return const Ok(null);
+    } catch (e) {
+      return Err(DatabaseError('更新上课记录失败: $e'));
+    }
+  }
+
+  @override
   Future<Result<void>> deleteRecord(int id) async {
     try {
       await _dao.deleteRecord(id);

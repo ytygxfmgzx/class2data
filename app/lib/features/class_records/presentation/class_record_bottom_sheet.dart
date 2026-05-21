@@ -320,14 +320,16 @@ class _ClassRecordBottomSheetState
 
     for (final photoPath in _pendingPhotos) {
       try {
+        // 先读取源文件信息（复制后源文件会被删除）
+        final file = File(photoPath);
+        final fileName = photoPath.split('/').last.split('\\').last;
+        final fileSize = await file.length();
+
         final relativePath = await fileService.copyToPrivateDirectory(
           sourcePath: photoPath,
           ownerType: 'class_record',
           ownerId: recordId,
         );
-        final file = File(photoPath);
-        final fileName = photoPath.split('/').last.split('\\').last;
-        final fileSize = await file.length();
 
         await attachRepo.insertAttachment(
           AttachmentsCompanion(
@@ -406,56 +408,61 @@ class _ClassRecordBottomSheetState
                 padding: const EdgeInsets.all(16),
                 children: [
                   // 状态选择
-                  Row(
-                    children: _statusOptions.map((opt) {
-                      final isSelected = _status == opt.$1;
-                      final colors = _statusColors[opt.$1]!;
-                      final icon = _statusIcons[opt.$1]!;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 4),
-                        child: GestureDetector(
-                          onTap: () => setState(() => _status = opt.$1),
-                          child: Container(
-                            height: 32,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: isSelected
-                                    ? colors.fg
-                                    : const Color(0xFFE8E8E8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: _statusOptions.map((opt) {
+                        final isSelected = _status == opt.$1;
+                        final colors = _statusColors[opt.$1]!;
+                        final icon = _statusIcons[opt.$1]!;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: GestureDetector(
+                            onTap: () => setState(() => _status = opt.$1),
+                            child: Container(
+                              height: 32,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
                               ),
-                              color: isSelected ? colors.bg : Colors.white,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  icon,
-                                  size: 16,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(
                                   color: isSelected
                                       ? colors.fg
-                                      : const Color(0xFF666666),
+                                      : const Color(0xFFE8E8E8),
                                 ),
-                                const SizedBox(width: 3),
-                                Text(
-                                  opt.$2,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: isSelected
-                                        ? FontWeight.w500
-                                        : null,
+                                color: isSelected ? colors.bg : Colors.white,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    icon,
+                                    size: 16,
                                     color: isSelected
                                         ? colors.fg
                                         : const Color(0xFF666666),
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    opt.$2,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w500
+                                          : null,
+                                      color: isSelected
+                                          ? colors.fg
+                                          : const Color(0xFF666666),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    }).toList(),
+                        );
+                      }).toList(),
+                    ),
                   ),
                   const SizedBox(height: 16),
 

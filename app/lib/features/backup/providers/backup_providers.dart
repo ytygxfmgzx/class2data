@@ -95,9 +95,15 @@ class BackupNotifier extends StateNotifier<BackupState> {
   ) : super(const BackupState());
 
   /// 加载备份目录中最新的备份文件信息。
+  ///
+  /// 如果当前处于 created 状态（刚备份完），重置为 idle，
+  /// 使页面展示最近备份卡片而非备份成功卡片。
   Future<void> loadLatestBackup() async {
     final info = await _fileStore.getLatestBackup();
-    state = state.copyWith(latestBackup: info);
+    state = state.copyWith(
+      latestBackup: info,
+      status: state.status == BackupStatus.created ? BackupStatus.idle : null,
+    );
   }
 
   /// 创建备份。
@@ -201,7 +207,13 @@ class BackupNotifier extends StateNotifier<BackupState> {
 
   /// 重置状态。
   void reset() {
+    final tempPath = state.filePath;
+    if (tempPath != null) _deleteTempFile(tempPath);
     state = const BackupState();
+  }
+
+  void _deleteTempFile(String path) {
+    File(path).delete().ignore();
   }
 
   String _formatDateTime(DateTime dt) {

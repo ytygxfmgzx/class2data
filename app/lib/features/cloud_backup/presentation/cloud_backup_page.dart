@@ -118,6 +118,7 @@ class _CloudBackupPageState extends ConsumerState<CloudBackupPage> {
     final newState = ref.read(cloudBackupNotifierProvider);
     if (newState.status == CloudBackupStatus.completed) {
       ref.invalidate(databaseProvider);
+      await ref.read(cloudBackupNotifierProvider.notifier).checkRemote();
       _showSnackBar('恢复成功，请返回查看最新数据');
     } else if (newState.status == CloudBackupStatus.error) {
       _showSnackBar(newState.errorMessage ?? '恢复失败', isError: true);

@@ -134,14 +134,15 @@ class AttachmentListSection extends ConsumerWidget {
 
     for (final xFile in selectedFiles) {
       try {
+        // 先读取源文件信息（复制后源文件会被删除）
+        final originalName = xFile.name;
+        final fileSize = await File(xFile.path).length();
+
         final relativePath = await fileService.copyToPrivateDirectory(
           sourcePath: xFile.path,
           ownerType: ownerType,
           ownerId: ownerId,
         );
-
-        final originalName = xFile.name;
-        final fileSize = await File(xFile.path).length();
 
         await repo.insertAttachment(
           AttachmentsCompanion(

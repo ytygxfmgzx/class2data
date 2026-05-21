@@ -16,39 +16,31 @@ class ClassRecordListSection extends ConsumerWidget {
     final recordsAsync = ref.watch(classRecordsByCourseProvider(courseId));
     final balanceService = CreditBalanceService();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        recordsAsync.when(
-          loading: () => const SizedBox.shrink(),
-          error: (e, _) => Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text('加载失败: $e'),
-          ),
-          data: (result) => switch (result) {
-            Ok(:final value) =>
-              value.isEmpty
-                  ? const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Center(child: Text('暂无上课记录')),
-                    )
-                  : Column(
-                      children: value
-                          .map(
-                            (r) => _RecordRow(
-                              record: r,
-                              balanceService: balanceService,
-                            ),
-                          )
-                          .toList(),
-                    ),
-            Err(:final error) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(error.message),
-            ),
-          },
+    return recordsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (e, _) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Text('加载失败: $e'),
+      ),
+      data: (result) => switch (result) {
+        Ok(:final value) =>
+          value.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: Text('暂无上课记录')),
+                )
+              : ListView.builder(
+                  itemCount: value.length,
+                  itemBuilder: (context, index) => _RecordRow(
+                    record: value[index],
+                    balanceService: balanceService,
+                  ),
+                ),
+        Err(:final error) => Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(error.message),
         ),
-      ],
+      },
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:class2data/core/result/result.dart';
 import 'package:class2data/data/database/app_database.dart';
 import 'package:class2data/domain/services/credit_balance_service.dart';
 import 'package:class2data/features/attachments/presentation/attachment_list_section.dart';
+import 'package:class2data/features/class_records/providers/class_record_providers.dart';
 import 'package:class2data/features/packages/providers/package_providers.dart';
 import 'package:class2data/shared/providers/database_provider.dart';
 import 'package:drift/drift.dart' show Value;
@@ -120,11 +121,26 @@ class _ClassRecordEditPageState extends ConsumerState<ClassRecordEditPage> {
 
     final now = DateTime.now();
 
-    int? creditUnitsCost;
-    if (_creditsController.text.trim().isNotEmpty && _shouldDeductCredits) {
-      creditUnitsCost = (double.parse(_creditsController.text.trim()) * 100)
-          .round();
-    } else if (!_shouldDeductCredits) {
+    int creditUnitsCost;
+    CreditTransactionsCompanion? creditTx;
+
+    if (_shouldDeductCredits) {
+      final input = _creditsController.text.trim();
+      creditUnitsCost = input.isNotEmpty
+          ? (double.parse(input) * 100).round()
+          : 0;
+
+      if (creditUnitsCost > 0) {
+        creditTx = CreditTransactionsCompanion(
+          kidCourseId: Value(_record!.kidCourseId),
+          packageId: Value(_selectedPackageId),
+          type: const Value('consume'),
+          creditUnitsDelta: Value(-creditUnitsCost),
+          transactionDate: Value(now),
+          createdAt: Value(now),
+        );
+      }
+    } else {
       creditUnitsCost = 0;
     }
 
@@ -144,7 +160,7 @@ class _ClassRecordEditPageState extends ConsumerState<ClassRecordEditPage> {
       startTime: Value(_record!.startTime),
       endTime: Value(_record!.endTime),
       durationMinutes: Value(durationMinutes),
-      creditUnitsCost: Value(creditUnitsCost ?? _record!.creditUnitsCost),
+      creditUnitsCost: Value(creditUnitsCost),
       packageId: Value(_shouldDeductCredits ? _selectedPackageId : null),
       scheduleOccurrenceKey: Value(_record!.scheduleOccurrenceKey),
       scheduleOccurrenceDate: Value(_record!.scheduleOccurrenceDate),
@@ -159,9 +175,11 @@ class _ClassRecordEditPageState extends ConsumerState<ClassRecordEditPage> {
     );
 
     final repo = ref.read(classRecordRepositoryProvider);
-    await repo.updateRecord(updatedRecord);
+    await repo.updateRecordWithCreditTransaction(updatedRecord, creditTx);
 
     if (mounted) {
+      // 刷新详情页数据
+      ref.invalidate(classRecordByIdProvider(widget.recordId));
       setState(() => _isLoading = false);
       Navigator.pop(context, true);
     }
@@ -406,6 +424,7 @@ class _PackageDropdown extends ConsumerWidget {
       data: (result) => switch (result) {
         Ok(:final value) => DropdownButtonFormField<int>(
           initialValue: selectedPackageId,
+          isExpanded: true,
           decoration: const InputDecoration(
             border: OutlineInputBorder(),
             hintText: '选择课包',
@@ -415,11 +434,7 @@ class _PackageDropdown extends ConsumerWidget {
               .map(
                 (p) => DropdownMenuItem(
                   value: p.id,
-                  child: Text(
-                    '${CreditBalanceService().packageTypeLabel(p.type)}'
-                    ' · ${p.purchaseDate.month}/${p.purchaseDate.day}',
-                    style: const TextStyle(fontSize: 13),
-                  ),
+                  child: _PackageDropdownLabel(package: p),
                 ),
               )
               .toList(),
@@ -427,6 +442,60 @@ class _PackageDropdown extends ConsumerWidget {
         ),
         Err() => const Text('加载课包失败'),
       },
+    );
+  }
+}
+
+class _PackageDropdownLabel extends StatelessWidget {
+  final Package package;
+  const _PackageDropdownLabel({required this.package});
+
+  @override
+  Widget build(BuildContext context) {
+    final bs = CreditBalanceService();
+    final theme = Theme.of(context);
+    final name =
+        '${bs.formatDate(package.purchaseDate)} ${bs.packageTypeLabel(package.type)}';
+
+    final hasValidity = package.validFrom != null || package.validUntil != null;
+    if (!hasValidity) {
+      return Text(name, style: const TextStyle(fontSize: 14));
+    }
+
+    final status = bs.periodPackageStatusLabel(
+      now: DateTime.now(),
+      validFrom: package.validFrom,
+      validUntil: package.validUntil,
+    );
+    final (bg, fg) = switch (status) {
+      '未开始' => (
+        theme.colorScheme.tertiaryContainer,
+        theme.colorScheme.onTertiaryContainer,
+      ),
+      '进行中' => (const Color(0xFFDCFCE7), const Color(0xFF166534)),
+      '已结束' => (
+        theme.colorScheme.surfaceContainerHighest,
+        theme.colorScheme.onSurfaceVariant,
+      ),
+      _ => (
+        theme.colorScheme.tertiaryContainer,
+        theme.colorScheme.onTertiaryContainer,
+      ),
+    };
+
+    return Row(
+      children: [
+        Flexible(child: Text(name, style: const TextStyle(fontSize: 14))),
+        const SizedBox(width: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: Text(status, style: TextStyle(fontSize: 10, color: fg)),
+        ),
+      ],
     );
   }
 }

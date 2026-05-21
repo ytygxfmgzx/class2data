@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:class2data/core/result/result.dart';
 import 'package:class2data/data/database/app_database.dart';
 import 'package:class2data/domain/services/schedule_occurrence_service.dart';
@@ -29,12 +31,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   int _pickerYear = DateTime.now().year;
   double _monthDragDistance = 0;
   int _monthTransitionDirection = 0;
-
-  final _quickAddMenuKey = GlobalKey(debugLabel: 'quickAddMenu');
-  int? _pullPointerId;
-  double _pullStartY = 0;
-  bool _pullTriggered = false;
-  bool _isScrollAtTop = true;
 
   _CalendarView _calendarView = _CalendarView.month;
   DateTime _monthViewMonth = DateTime(
@@ -98,7 +94,6 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   void _shiftWeek(int direction) {
     setState(() {
-      _isScrollAtTop = true;
       _weekStart = _weekStart.add(Duration(days: direction * 7));
       final dayOffset = _selectedDate.weekday - 1;
       _selectedDate = _weekStart.add(Duration(days: dayOffset));
@@ -109,7 +104,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   void _selectDate(DateTime date) {
     if (date == _selectedDate) return;
     setState(() {
-      _isScrollAtTop = true;
       _selectedDate = date;
       _weekStart = _startOfWeek(date);
     });
@@ -179,7 +173,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   void _shiftMonth(int direction) {
     _monthTransitionDirection = direction.sign;
     setState(() {
-      _isScrollAtTop = true;
       _monthViewMonth = DateTime(
         _monthViewMonth.year,
         _monthViewMonth.month + direction,
@@ -225,7 +218,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   void _toggleView(_CalendarView view) {
     PageController? oldWeekCtrl;
     setState(() {
-      _isScrollAtTop = true;
       if (view == _CalendarView.month && _calendarView == _CalendarView.week) {
         _monthViewMonth = DateTime(_selectedDate.year, _selectedDate.month, 1);
         _monthSelectedDay = _selectedDate;
@@ -258,11 +250,8 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     final children = _unwrapChildren(childrenAsync);
     final courses = _unwrapCourses(coursesAsync);
-    final today = DateTime(
-      DateTime.now().year,
-      DateTime.now().month,
-      DateTime.now().day,
-    );
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
 
     // 周视图数据
     final selectedDateStr = _formatDate(_selectedDate);
@@ -273,7 +262,12 @@ class _HomePageState extends ConsumerState<HomePage> {
     final dayItems = filteredWeekItems
         .where((o) => o.date == selectedDateStr)
         .toList();
-    final datesWithCourses = allWeekItems.map((o) => o.date).toSet();
+    final weekDotStatesByDate = <String, List<CalendarDotColor>>{};
+    for (final item in allWeekItems) {
+      weekDotStatesByDate
+          .putIfAbsent(item.date, () => [])
+          .add(item.calendarDotState(now));
+    }
 
     // 月视图选中日期
     final monthSelectedDateStr = _formatDate(_monthSelectedDay);
@@ -288,10 +282,11 @@ class _HomePageState extends ConsumerState<HomePage> {
     final allMonthItems =
         monthItemsAsync?.whenOrNull(data: (list) => list) ?? <HomeDayItem>[];
     final filteredMonthItems = _filterItems(allMonthItems);
-    final monthCourseCountByDate = <String, int>{};
+    final monthDotStatesByDate = <String, List<CalendarDotColor>>{};
     for (final item in filteredMonthItems) {
-      monthCourseCountByDate[item.date] =
-          (monthCourseCountByDate[item.date] ?? 0) + 1;
+      monthDotStatesByDate
+          .putIfAbsent(item.date, () => [])
+          .add(item.calendarDotState(now));
     }
     final monthDayItems = filteredMonthItems
         .where((o) => o.date == monthSelectedDateStr)
@@ -299,7 +294,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final monthPageKey = ValueKey(_formatDate(_monthViewMonth));
 
     void handleRefresh() {
-      ref.invalidate(weekHomeItemsProvider(weekDataRange));
+      ref.read(homeDataVersionProvider.notifier).state++;
     }
 
     return Scaffold(
@@ -323,235 +318,216 @@ class _HomePageState extends ConsumerState<HomePage> {
                   : _CalendarView.week,
             ),
           ),
-          _QuickAddMenu(
-            popupKey: _quickAddMenuKey,
-            courses: courses,
-            children: children,
-            selectedDateStr: _calendarView == _CalendarView.week
-                ? selectedDateStr
-                : monthSelectedDateStr,
-            onRefresh: handleRefresh,
-          ),
         ],
       ),
-      floatingActionButton: courses.isNotEmpty
-          ? _CourseFilterFab(
-              courses: courses,
-              children: children,
-              selectedFilter: _courseFilter,
-              onFilterChanged: (f) => setState(() => _courseFilter = f),
-            )
-          : null,
-      body: NotificationListener<ScrollNotification>(
-        onNotification: _handleScrollNotification,
-        child: Listener(
-          onPointerDown: _handlePointerDown,
-          onPointerMove: _handlePointerMove,
-          onPointerUp: _handlePointerUp,
-          onPointerCancel: _handlePointerCancel,
-          child: Stack(
-            children: [
-              if (_calendarView == _CalendarView.week)
-                // ─── 周视图 ───
-                Column(
-                  children: [
-                    _MonthWeekNav(
-                      selectedDate: _selectedDate,
-                      onPreviousWeek: () => _shiftWeek(-1),
-                      onNextWeek: () => _shiftWeek(1),
-                      onToggleMonthPicker: () {
+      floatingActionButton: _HomeFabGroup(
+        courses: courses,
+        children: children,
+        selectedDateStr: _calendarView == _CalendarView.week
+            ? selectedDateStr
+            : monthSelectedDateStr,
+        onRefresh: handleRefresh,
+        courseFilter: _courseFilter,
+        onFilterChanged: (f) => setState(() => _courseFilter = f),
+      ),
+      body: Stack(
+        children: [
+          if (_calendarView == _CalendarView.week)
+            // ─── 周视图 ───
+            Column(
+              children: [
+                _MonthWeekNav(
+                  selectedDate: _selectedDate,
+                  onPreviousWeek: () => _shiftWeek(-1),
+                  onNextWeek: () => _shiftWeek(1),
+                  onToggleMonthPicker: () {
+                    setState(() {
+                      _showMonthPicker = !_showMonthPicker;
+                      _pickerYear = _selectedDate.year;
+                    });
+                  },
+                ),
+                _DayInfoBar(
+                  selectedDate: _selectedDate,
+                  courseCount: dayItems.length,
+                ),
+                _WeekStrip(
+                  weekStart: _weekStart,
+                  selectedDate: _selectedDate,
+                  today: today,
+                  dotStatesByDate: weekDotStatesByDate,
+                  onDateSelected: _selectDate,
+                ),
+                const _CalendarLegend(),
+                const Divider(height: 1),
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (page) {
+                      final date = _pageToDate(page);
+                      if (date != _selectedDate) {
                         setState(() {
-                          _showMonthPicker = !_showMonthPicker;
-                          _pickerYear = _selectedDate.year;
+                          _selectedDate = date;
+                          _weekStart = _startOfWeek(date);
                         });
-                      },
-                    ),
-                    _DayInfoBar(
-                      selectedDate: _selectedDate,
-                      courseCount: dayItems.length,
-                    ),
-                    _WeekStrip(
-                      weekStart: _weekStart,
-                      selectedDate: _selectedDate,
-                      today: today,
-                      datesWithCourses: datesWithCourses,
-                      onDateSelected: _selectDate,
-                    ),
-                    const Divider(height: 1),
-                    Expanded(
-                      child: PageView.builder(
-                        controller: _pageController,
-                        onPageChanged: (page) {
-                          final date = _pageToDate(page);
-                          if (date != _selectedDate) {
-                            setState(() {
-                              _isScrollAtTop = true;
-                              _selectedDate = date;
-                              _weekStart = _startOfWeek(date);
-                            });
-                          }
-                        },
-                        itemBuilder: (context, index) {
-                          if (weekItemsAsync.hasError) {
-                            return Center(
-                              child: Text('加载失败: ${weekItemsAsync.error}'),
-                            );
-                          }
-                          final date = _pageToDate(index);
-                          final dateStr = _formatDate(date);
-                          final pageItems = filteredWeekItems
-                              .where((o) => o.date == dateStr)
-                              .toList();
+                      }
+                    },
+                    itemBuilder: (context, index) {
+                      if (weekItemsAsync.hasError) {
+                        return Center(
+                          child: Text('加载失败: ${weekItemsAsync.error}'),
+                        );
+                      }
+                      final date = _pageToDate(index);
+                      final dateStr = _formatDate(date);
+                      final pageItems = filteredWeekItems
+                          .where((o) => o.date == dateStr)
+                          .toList();
 
-                          if (pageItems.isEmpty && weekItemsAsync.isLoading) {
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          }
-                          if (pageItems.isEmpty) {
-                            return _EmptyDayState(
-                              hasCourses: filteredWeekItems.isNotEmpty,
-                            );
-                          }
-                          return _OccurrenceList(
-                            items: pageItems,
-                            children: children,
-                            courses: courses,
-                            onRecordSaved: () => ref.invalidate(
-                              weekHomeItemsProvider(weekDataRange),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                )
-              else
-                // ─── 月视图 ───
-                Column(
-                  children: [
-                    _MonthWeekNav(
-                      selectedDate: _monthViewMonth,
-                      onPreviousWeek: () => _shiftMonth(-1),
-                      onNextWeek: () => _shiftMonth(1),
-                      onToggleMonthPicker: () {
-                        setState(() {
-                          _showMonthPicker = !_showMonthPicker;
-                          _pickerYear = _monthViewMonth.year;
-                        });
-                      },
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onHorizontalDragStart: _handleMonthDragStart,
-                        onHorizontalDragUpdate: _handleMonthDragUpdate,
-                        onHorizontalDragEnd: _handleMonthDragEnd,
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          transitionBuilder: (child, animation) {
-                            final incoming = child.key == monthPageKey;
-                            final direction = _monthTransitionDirection;
-                            final begin = direction == 0
-                                ? Offset.zero
-                                : Offset(
-                                    incoming
-                                        ? direction.toDouble()
-                                        : -direction.toDouble(),
-                                    0,
-                                  );
-                            final curved = CurvedAnimation(
-                              parent: animation,
-                              curve: Curves.easeOutCubic,
-                            );
-                            return FadeTransition(
-                              opacity: curved,
-                              child: SlideTransition(
-                                position: Tween<Offset>(
-                                  begin: begin,
-                                  end: Offset.zero,
-                                ).animate(curved),
-                                child: child,
-                              ),
-                            );
-                          },
-                          child: Column(
-                            key: monthPageKey,
-                            children: [
-                              _buildWeekdayHeader(context),
-                              _MonthCalendarGrid(
-                                month: _monthViewMonth,
-                                selectedDay: _monthSelectedDay,
-                                today: today,
-                                courseCountByDate: monthCourseCountByDate,
-                                onDaySelected: (date) {
-                                  setState(() => _monthSelectedDay = date);
-                                },
-                              ),
-                              const Divider(height: 1),
-                              _DayInfoBar(
-                                selectedDate: _monthSelectedDay,
-                                courseCount: monthDayItems.length,
-                              ),
-                              Expanded(
-                                child: monthItemsAsync?.hasError == true
-                                    ? Center(
-                                        child: Text(
-                                          '加载失败: ${monthItemsAsync!.error}',
-                                        ),
-                                      )
-                                    : monthDayItems.isEmpty &&
-                                          monthItemsAsync?.isLoading != true
-                                    ? _EmptyDayState(
-                                        hasCourses:
-                                            filteredMonthItems.isNotEmpty,
-                                      )
-                                    : monthItemsAsync?.isLoading == true
-                                    ? const Center(
-                                        child: CircularProgressIndicator(),
-                                      )
-                                    : _OccurrenceList(
-                                        items: monthDayItems,
-                                        children: children,
-                                        courses: courses,
-                                        onRecordSaved: () => ref.invalidate(
-                                          weekHomeItemsProvider(
-                                            monthGridRange!,
-                                          ),
-                                        ),
-                                      ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              // 月份选择器浮层
-              if (_showMonthPicker) ...[
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => setState(() => _showMonthPicker = false),
-                  child: const SizedBox.expand(),
-                ),
-                Positioned(
-                  top: 0,
-                  left: 16,
-                  right: 16,
-                  child: _MonthPickerPopup(
-                    pickerYear: _pickerYear,
-                    selectedDate: _calendarView == _CalendarView.week
-                        ? _selectedDate
-                        : _monthViewMonth,
-                    onYearChanged: (y) => setState(() => _pickerYear = y),
-                    onMonthSelected: _selectMonth,
+                      if (pageItems.isEmpty && weekItemsAsync.isLoading) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (pageItems.isEmpty) {
+                        return _EmptyDayState(
+                          hasCourses: filteredWeekItems.isNotEmpty,
+                        );
+                      }
+                      return _OccurrenceList(
+                        items: pageItems,
+                        children: children,
+                        courses: courses,
+                        now: now,
+                        onRecordSaved: () =>
+                            ref.read(homeDataVersionProvider.notifier).state++,
+                      );
+                    },
                   ),
                 ),
               ],
-            ],
-          ),
-        ),
+            )
+          else
+            // ─── 月视图 ───
+            Column(
+              children: [
+                _MonthWeekNav(
+                  selectedDate: _monthViewMonth,
+                  onPreviousWeek: () => _shiftMonth(-1),
+                  onNextWeek: () => _shiftMonth(1),
+                  onToggleMonthPicker: () {
+                    setState(() {
+                      _showMonthPicker = !_showMonthPicker;
+                      _pickerYear = _monthViewMonth.year;
+                    });
+                  },
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onHorizontalDragStart: _handleMonthDragStart,
+                    onHorizontalDragUpdate: _handleMonthDragUpdate,
+                    onHorizontalDragEnd: _handleMonthDragEnd,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      transitionBuilder: (child, animation) {
+                        final incoming = child.key == monthPageKey;
+                        final direction = _monthTransitionDirection;
+                        final begin = direction == 0
+                            ? Offset.zero
+                            : Offset(
+                                incoming
+                                    ? direction.toDouble()
+                                    : -direction.toDouble(),
+                                0,
+                              );
+                        final curved = CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.easeOutCubic,
+                        );
+                        return FadeTransition(
+                          opacity: curved,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: begin,
+                              end: Offset.zero,
+                            ).animate(curved),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: Column(
+                        key: monthPageKey,
+                        children: [
+                          _buildWeekdayHeader(context),
+                          _MonthCalendarGrid(
+                            month: _monthViewMonth,
+                            selectedDay: _monthSelectedDay,
+                            today: today,
+                            dotStatesByDate: monthDotStatesByDate,
+                            onDaySelected: (date) {
+                              setState(() => _monthSelectedDay = date);
+                            },
+                          ),
+                          const _CalendarLegend(),
+                          const Divider(height: 1),
+                          _DayInfoBar(
+                            selectedDate: _monthSelectedDay,
+                            courseCount: monthDayItems.length,
+                          ),
+                          Expanded(
+                            child: monthItemsAsync?.hasError == true
+                                ? Center(
+                                    child: Text(
+                                      '加载失败: ${monthItemsAsync!.error}',
+                                    ),
+                                  )
+                                : monthDayItems.isEmpty &&
+                                      monthItemsAsync?.isLoading != true
+                                ? _EmptyDayState(
+                                    hasCourses: filteredMonthItems.isNotEmpty,
+                                  )
+                                : monthItemsAsync?.isLoading == true
+                                ? const Center(
+                                    child: CircularProgressIndicator(),
+                                  )
+                                : _OccurrenceList(
+                                    items: monthDayItems,
+                                    children: children,
+                                    courses: courses,
+                                    now: now,
+                                    onRecordSaved: () => ref
+                                        .read(homeDataVersionProvider.notifier)
+                                        .state++,
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          // 月份选择器浮层
+          if (_showMonthPicker) ...[
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => setState(() => _showMonthPicker = false),
+              child: const SizedBox.expand(),
+            ),
+            Positioned(
+              top: 0,
+              left: 16,
+              right: 16,
+              child: _MonthPickerPopup(
+                pickerYear: _pickerYear,
+                selectedDate: _calendarView == _CalendarView.week
+                    ? _selectedDate
+                    : _monthViewMonth,
+                onYearChanged: (y) => setState(() => _pickerYear = y),
+                onMonthSelected: _selectMonth,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -610,162 +586,174 @@ class _HomePageState extends ConsumerState<HomePage> {
     if (courseId == null) return items;
     return items.where((o) => o.kidCourseId == courseId).toList();
   }
-
-  bool _handleScrollNotification(ScrollNotification notification) {
-    if (notification is ScrollUpdateNotification) {
-      _isScrollAtTop = notification.metrics.pixels <= 0;
-    }
-    return false;
-  }
-
-  void _handlePointerDown(PointerDownEvent event) {
-    _pullPointerId = event.pointer;
-    _pullStartY = event.position.dy;
-    _pullTriggered = false;
-  }
-
-  void _handlePointerMove(PointerMoveEvent event) {
-    if (event.pointer != _pullPointerId || _pullTriggered || !_isScrollAtTop) {
-      return;
-    }
-    final dy = event.position.dy - _pullStartY;
-    if (dy > 100) {
-      _pullTriggered = true;
-      _showQuickAddMenu();
-    }
-  }
-
-  void _handlePointerUp(PointerEvent event) {
-    if (event.pointer == _pullPointerId) {
-      _pullPointerId = null;
-    }
-  }
-
-  void _handlePointerCancel(PointerEvent event) {
-    if (event.pointer == _pullPointerId) {
-      _pullPointerId = null;
-    }
-  }
-
-  void _showQuickAddMenu() {
-    final state = _quickAddMenuKey.currentState;
-    if (state != null) {
-      (state as dynamic).showButtonMenu();
-    }
-  }
 }
 
-// ─── 快捷添加菜单 ───
+// ─── 首页浮层按钮组 ───
 
-class _QuickAddMenu extends ConsumerWidget {
-  final Key? popupKey;
+class _HomeFabGroup extends StatefulWidget {
   final List<KidCourse> courses;
   final List<ChildrenData> children;
   final String selectedDateStr;
   final VoidCallback onRefresh;
+  final String courseFilter;
+  final ValueChanged<String> onFilterChanged;
 
-  const _QuickAddMenu({
-    this.popupKey,
+  const _HomeFabGroup({
     required this.courses,
     required this.children,
     required this.selectedDateStr,
     required this.onRefresh,
+    required this.courseFilter,
+    required this.onFilterChanged,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return PopupMenuButton<String>(
-      key: popupKey,
-      icon: const Icon(Icons.add),
-      tooltip: '快捷操作',
-      onSelected: (value) async {
-        switch (value) {
-          case 'record':
-            await _openQuickRecord(context, ref);
-          case 'package':
-            await _openQuickPackage(context);
-          case 'course':
-            final newCourseId = await context.push<int>('/courses/add');
-            if (newCourseId != null && context.mounted) {
-              await context.push('/courses/$newCourseId');
-            }
-          case 'achievement':
-            await _openQuickAchievement(context);
-          case 'child':
-            await context.push('/children/add');
-          case 'courseManage':
-            if (context.mounted) {
-              await context.push('/course-manage');
-            }
-        }
-      },
-      itemBuilder: (context) => [
-        const PopupMenuItem(
-          value: 'record',
-          child: Row(
-            children: [
-              Icon(Icons.edit_note, size: 20),
-              SizedBox(width: 12),
-              Text('记录上课', style: TextStyle(fontWeight: FontWeight.w600)),
-            ],
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'achievement',
-          child: Row(
-            children: [
-              Icon(Icons.emoji_events_outlined, size: 20),
-              SizedBox(width: 12),
-              Text('记录成长'),
-            ],
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'course',
-          child: Row(
-            children: [
-              Icon(Icons.school_outlined, size: 20),
-              SizedBox(width: 12),
-              Text('录入课程'),
-            ],
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'package',
-          child: Row(
-            children: [
-              Icon(Icons.inventory_2_outlined, size: 20),
-              SizedBox(width: 12),
-              Text('录入课时包'),
-            ],
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'child',
-          child: Row(
-            children: [
-              Icon(Icons.child_care_outlined, size: 20),
-              SizedBox(width: 12),
-              Text('录入孩子'),
-            ],
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'courseManage',
-          child: Row(
-            children: [
-              Icon(Icons.manage_accounts_outlined, size: 20),
-              SizedBox(width: 12),
-              Text('课程管理'),
-            ],
-          ),
-        ),
-      ],
+  State<_HomeFabGroup> createState() => _HomeFabGroupState();
+}
+
+class _HomeFabGroupState extends State<_HomeFabGroup>
+    with SingleTickerProviderStateMixin {
+  bool _isExpanded = false;
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
     );
   }
 
-  Future<void> _openQuickRecord(BuildContext context, WidgetRef ref) async {
-    if (courses.isEmpty) {
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _toggle() {
+    setState(() => _isExpanded = !_isExpanded);
+    if (_isExpanded) {
+      _controller.forward();
+    } else {
+      _controller.reverse();
+    }
+  }
+
+  void _close() {
+    if (!_isExpanded) return;
+    setState(() => _isExpanded = false);
+    _controller.reverse();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final items = _buildDialItems();
+
+    final children = <Widget>[];
+
+    for (int i = 0; i < items.length; i++) {
+      final delay = (items.length - 1 - i) / items.length;
+      children.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _DialChild(
+            animation: CurvedAnimation(
+              parent: _controller,
+              curve: Interval(delay, 1.0, curve: Curves.easeOutCubic),
+            ),
+            label: items[i].label,
+            icon: items[i].icon,
+            onTap: () {
+              _close();
+              items[i].onTap();
+            },
+          ),
+        ),
+      );
+    }
+
+    // 主 FAB（+ 按钮）
+    children.add(
+      FloatingActionButton(
+        onPressed: _toggle,
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            return Transform.rotate(
+              angle: _controller.value * 0.75 * pi,
+              child: child,
+            );
+          },
+          child: const Icon(Icons.add),
+        ),
+      ),
+    );
+
+    // 筛选按钮在主 FAB 下方，大小一致
+    if (widget.courses.isNotEmpty) {
+      children.add(
+        Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: _CourseFilterFab(
+            courses: widget.courses,
+            children: widget.children,
+            selectedFilter: widget.courseFilter,
+            onFilterChanged: widget.onFilterChanged,
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: children,
+    );
+  }
+
+  List<_DialItemData> _buildDialItems() {
+    return [
+      _DialItemData(
+        label: '课程管理',
+        icon: Icons.manage_accounts_outlined,
+        onTap: () => context.push('/course-manage'),
+      ),
+      _DialItemData(
+        label: '录入孩子',
+        icon: Icons.child_care_outlined,
+        onTap: () => context.push('/children/add'),
+      ),
+      _DialItemData(
+        label: '录入课时包',
+        icon: Icons.inventory_2_outlined,
+        onTap: () => _openQuickPackage(),
+      ),
+      _DialItemData(
+        label: '录入课程',
+        icon: Icons.school_outlined,
+        onTap: () async {
+          final newCourseId = await context.push<int>('/courses/add');
+          if (newCourseId != null && context.mounted) {
+            await context.push('/courses/$newCourseId');
+          }
+        },
+      ),
+      _DialItemData(
+        label: '记录成长',
+        icon: Icons.emoji_events_outlined,
+        onTap: () => _openQuickAchievement(),
+      ),
+      _DialItemData(
+        label: '记录上课',
+        icon: Icons.edit_note,
+        onTap: () => _openQuickRecord(),
+      ),
+    ];
+  }
+
+  Future<void> _openQuickRecord() async {
+    if (widget.courses.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('请先添加课程')));
@@ -774,9 +762,11 @@ class _QuickAddMenu extends ConsumerWidget {
     final selected = await _showUnifiedBottomSheet<KidCourse>(
       context: context,
       title: '选择课程',
-      items: courses,
+      items: widget.courses,
       itemBuilder: (c) {
-        final child = children.where((ch) => ch.id == c.childId).firstOrNull;
+        final child = widget.children
+            .where((ch) => ch.id == c.childId)
+            .firstOrNull;
         return ListTile(
           leading: child != null
               ? ChildAvatar(
@@ -799,11 +789,11 @@ class _QuickAddMenu extends ConsumerWidget {
     final occurrence = ScheduleOccurrence(
       scheduleId: -1,
       kidCourseId: selected.id,
-      date: selectedDateStr,
+      date: widget.selectedDateStr,
       startTime: DateFormat('HH:mm').format(now),
       endTime: DateFormat('HH:mm').format(now.add(const Duration(hours: 1))),
       occurrenceKey:
-          'manual_${selected.id}_${selectedDateStr}_${now.millisecondsSinceEpoch}',
+          'manual_${selected.id}_${widget.selectedDateStr}_${now.millisecondsSinceEpoch}',
       classType: null,
       classNameSnapshot: selected.name,
     );
@@ -813,11 +803,11 @@ class _QuickAddMenu extends ConsumerWidget {
       isScrollControlled: true,
       builder: (_) => ClassRecordBottomSheet(occurrence: occurrence),
     );
-    if (saved == true) onRefresh();
+    if (saved == true) widget.onRefresh();
   }
 
-  Future<void> _openQuickPackage(BuildContext context) async {
-    if (courses.isEmpty) {
+  Future<void> _openQuickPackage() async {
+    if (widget.courses.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('请先添加课程')));
@@ -826,9 +816,11 @@ class _QuickAddMenu extends ConsumerWidget {
     final selected = await _showUnifiedBottomSheet<KidCourse>(
       context: context,
       title: '选择课程',
-      items: courses,
+      items: widget.courses,
       itemBuilder: (c) {
-        final child = children.where((ch) => ch.id == c.childId).firstOrNull;
+        final child = widget.children
+            .where((ch) => ch.id == c.childId)
+            .firstOrNull;
         return ListTile(
           leading: child != null
               ? ChildAvatar(
@@ -850,21 +842,21 @@ class _QuickAddMenu extends ConsumerWidget {
     }
   }
 
-  Future<void> _openQuickAchievement(BuildContext context) async {
-    if (children.isEmpty) {
+  Future<void> _openQuickAchievement() async {
+    if (widget.children.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('请先添加孩子')));
       return;
     }
     ChildrenData? selected;
-    if (children.length == 1) {
-      selected = children.first;
+    if (widget.children.length == 1) {
+      selected = widget.children.first;
     } else {
       selected = await _showUnifiedBottomSheet<ChildrenData>(
         context: context,
         title: '选择孩子',
-        items: children,
+        items: widget.children,
         itemBuilder: (child) => ListTile(
           leading: ChildAvatar(
             name: child.name,
@@ -879,6 +871,90 @@ class _QuickAddMenu extends ConsumerWidget {
     if (selected != null && context.mounted) {
       await context.push('/children/${selected.id}/achievements/add');
     }
+  }
+}
+
+class _DialItemData {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _DialItemData({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+}
+
+class _DialChild extends StatelessWidget {
+  final Animation<double> animation;
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _DialChild({
+    required this.animation,
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        return IgnorePointer(
+          ignoring: animation.value < 0.1,
+          child: Opacity(
+            opacity: animation.value,
+            child: Padding(
+              padding: EdgeInsets.only(top: 8 * (1 - animation.value)),
+              child: child,
+            ),
+          ),
+        );
+      },
+      child: GestureDetector(
+        onTap: onTap,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            FloatingActionButton(
+              heroTag: label,
+              onPressed: onTap,
+              backgroundColor: theme.colorScheme.secondaryContainer,
+              foregroundColor: theme.colorScheme.onSecondaryContainer,
+              child: Icon(icon),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -1147,7 +1223,7 @@ class _CourseFilterFab extends StatelessWidget {
         ? courses.where((c) => c.id.toString() == selectedFilter).firstOrNull
         : null;
 
-    return FloatingActionButton.small(
+    return FloatingActionButton(
       onPressed: () => _showFilterSheet(context),
       tooltip: selectedCourse != null ? selectedCourse.name : '筛选课程',
       backgroundColor: isFiltered
@@ -1156,10 +1232,7 @@ class _CourseFilterFab extends StatelessWidget {
       foregroundColor: isFiltered
           ? theme.colorScheme.onPrimaryContainer
           : theme.colorScheme.onSurfaceVariant,
-      child: Icon(
-        isFiltered ? Icons.filter_list : Icons.filter_list_outlined,
-        size: 20,
-      ),
+      child: Icon(isFiltered ? Icons.filter_list : Icons.filter_list_outlined),
     );
   }
 
@@ -1264,7 +1337,7 @@ class _WeekStrip extends StatelessWidget {
   final DateTime weekStart;
   final DateTime selectedDate;
   final DateTime today;
-  final Set<String> datesWithCourses;
+  final Map<String, List<CalendarDotColor>> dotStatesByDate;
   final ValueChanged<DateTime> onDateSelected;
 
   static const _weekdays = ['一', '二', '三', '四', '五', '六', '日'];
@@ -1273,7 +1346,7 @@ class _WeekStrip extends StatelessWidget {
     required this.weekStart,
     required this.selectedDate,
     required this.today,
-    required this.datesWithCourses,
+    required this.dotStatesByDate,
     required this.onDateSelected,
   });
 
@@ -1291,7 +1364,7 @@ class _WeekStrip extends StatelessWidget {
               '${date.day.toString().padLeft(2, '0')}';
           final isSelected = date == selectedDate;
           final isToday = date == today;
-          final hasCourse = datesWithCourses.contains(dateStr);
+          final dotStates = dotStatesByDate[dateStr];
 
           return Expanded(
             child: GestureDetector(
@@ -1321,19 +1394,10 @@ class _WeekStrip extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    // 选中态：蓝色底线；非选中但有课程：蓝色圆点
-                    Container(
-                      width: isSelected ? 16 : 4,
-                      height: isSelected ? 2 : 4,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? theme.colorScheme.primary
-                            : hasCourse
-                            ? theme.colorScheme.primary
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(isSelected ? 1 : 2),
-                      ),
-                    ),
+                    if (dotStates != null && dotStates.isNotEmpty)
+                      isSelected
+                          ? _buildSelectedIndicator(theme, dotStates)
+                          : _buildDots(theme, dotStates),
                   ],
                 ),
               ),
@@ -1343,6 +1407,67 @@ class _WeekStrip extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildDots(ThemeData theme, List<CalendarDotColor> states) {
+    final display = states.length > 4 ? states.sublist(0, 4) : states;
+    final extra = states.length > 4 ? states.length - 4 : 0;
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 2,
+      runSpacing: 1,
+      children: [
+        ...display.map(
+          (s) => Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: _dotColor(s),
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+        if (extra > 0)
+          Text(
+            '+$extra',
+            style: TextStyle(
+              fontSize: 8,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSelectedIndicator(
+    ThemeData theme,
+    List<CalendarDotColor> states,
+  ) {
+    final mostUrgent = _mostUrgent(states);
+    return Container(
+      width: 16,
+      height: 2,
+      decoration: BoxDecoration(
+        color: _dotColor(mostUrgent),
+        borderRadius: BorderRadius.circular(1),
+      ),
+    );
+  }
+
+  static CalendarDotColor _mostUrgent(List<CalendarDotColor> states) {
+    if (states.contains(CalendarDotColor.pastPending)) {
+      return CalendarDotColor.pastPending;
+    }
+    if (states.contains(CalendarDotColor.upcoming)) {
+      return CalendarDotColor.upcoming;
+    }
+    return CalendarDotColor.recorded;
+  }
+
+  static Color _dotColor(CalendarDotColor state) => switch (state) {
+    CalendarDotColor.pastPending => Colors.red.shade400,
+    CalendarDotColor.upcoming => Colors.orange.shade400,
+    CalendarDotColor.recorded => Colors.green.shade500,
+  };
 }
 
 // ─── 空状态 ───
@@ -1370,6 +1495,7 @@ class _OccurrenceList extends StatelessWidget {
   final List<ChildrenData> children;
   final List<KidCourse> courses;
   final VoidCallback? onRecordSaved;
+  final DateTime now;
 
   static const _statusLabels = {
     'attended': '已上课',
@@ -1383,6 +1509,7 @@ class _OccurrenceList extends StatelessWidget {
     required this.items,
     required this.children,
     required this.courses,
+    required this.now,
     this.onRecordSaved,
   });
 
@@ -1436,6 +1563,7 @@ class _OccurrenceList extends StatelessWidget {
             constraints: const BoxConstraints(minHeight: 56),
             decoration: BoxDecoration(
               border: Border(
+                left: BorderSide(color: _indicatorColor(item), width: 3),
                 bottom: BorderSide(
                   color: theme.colorScheme.outlineVariant,
                   width: 1,
@@ -1586,6 +1714,15 @@ class _OccurrenceList extends StatelessWidget {
       _ => theme.colorScheme.onTertiaryContainer,
     };
   }
+
+  Color _indicatorColor(HomeDayItem item) {
+    final state = item.calendarDotState(now);
+    return switch (state) {
+      CalendarDotColor.pastPending => Colors.red.shade400,
+      CalendarDotColor.upcoming => Colors.orange.shade400,
+      CalendarDotColor.recorded => Colors.green.shade500,
+    };
+  }
 }
 
 class _PackageTag extends StatelessWidget {
@@ -1618,14 +1755,14 @@ class _MonthCalendarGrid extends StatelessWidget {
   final DateTime month;
   final DateTime selectedDay;
   final DateTime today;
-  final Map<String, int> courseCountByDate;
+  final Map<String, List<CalendarDotColor>> dotStatesByDate;
   final ValueChanged<DateTime> onDaySelected;
 
   const _MonthCalendarGrid({
     required this.month,
     required this.selectedDay,
     required this.today,
-    required this.courseCountByDate,
+    required this.dotStatesByDate,
     required this.onDaySelected,
   });
 
@@ -1664,7 +1801,7 @@ class _MonthCalendarGrid extends StatelessWidget {
               final isCurrentMonth = date.month == month.month;
               final isSelected = date == selectedDay;
               final isToday = date == today;
-              final courseCount = courseCountByDate[dateStr] ?? 0;
+              final dotStates = dotStatesByDate[dateStr];
 
               return Expanded(
                 child: GestureDetector(
@@ -1708,27 +1845,25 @@ class _MonthCalendarGrid extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 2),
-                        if (courseCount > 0)
+                        if (dotStates != null && dotStates.isNotEmpty)
                           Wrap(
                             alignment: WrapAlignment.center,
                             spacing: 1.5,
                             runSpacing: 1,
-                            children: List.generate(
-                              courseCount,
-                              (_) => Container(
-                                width: 3.5,
-                                height: 3.5,
+                            children: dotStates.map((state) {
+                              return Container(
+                                width: 6,
+                                height: 6,
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? theme.colorScheme.onPrimary
+                                      ? _selectedDotColor(state)
                                       : isCurrentMonth
-                                      ? theme.colorScheme.primary
-                                      : theme.colorScheme.onSurfaceVariant
-                                            .withValues(alpha: 0.3),
+                                      ? _dotColor(state)
+                                      : _dotColor(state).withValues(alpha: 0.4),
                                   shape: BoxShape.circle,
                                 ),
-                              ),
-                            ),
+                              );
+                            }).toList(),
                           ),
                       ],
                     ),
@@ -1741,4 +1876,71 @@ class _MonthCalendarGrid extends StatelessWidget {
       }),
     );
   }
+
+  static Color _dotColor(CalendarDotColor state) => switch (state) {
+    CalendarDotColor.pastPending => Colors.red.shade400,
+    CalendarDotColor.upcoming => Colors.orange.shade400,
+    CalendarDotColor.recorded => Colors.green.shade500,
+  };
+
+  static Color _selectedDotColor(CalendarDotColor state) => switch (state) {
+    CalendarDotColor.pastPending => Colors.red.shade200,
+    CalendarDotColor.upcoming => Colors.orange.shade200,
+    CalendarDotColor.recorded => Colors.green.shade300,
+  };
+}
+
+// ─── 日历图例 ───
+
+class _CalendarLegend extends StatelessWidget {
+  const _CalendarLegend();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    const items = [
+      (CalendarDotColor.pastPending, '待补录'),
+      (CalendarDotColor.upcoming, '待上课'),
+      (CalendarDotColor.recorded, '已记录'),
+    ];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: items.map((item) {
+          final (state, label) = item;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: _dotColor(state),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 3),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  static Color _dotColor(CalendarDotColor state) => switch (state) {
+    CalendarDotColor.pastPending => Colors.red.shade400,
+    CalendarDotColor.upcoming => Colors.orange.shade400,
+    CalendarDotColor.recorded => Colors.green.shade500,
+  };
 }

@@ -20,6 +20,15 @@ class BackupStorageChannel {
     return await _channel.invokeMethod<String>('getBackupDirPath') as String;
   }
 
+  /// 通过 MediaStore 查询备份目录中最新的备份文件信息。
+  ///
+  /// 返回 `{name, size, lastModified, path}` 或 null。
+  Future<Map<Object?, Object?>?> getLatestBackupInfo() async {
+    return await _channel.invokeMethod<Map<Object?, Object?>>(
+      'getLatestBackupInfo',
+    );
+  }
+
   /// 打开文件管理器定位到指定目录。
   Future<bool> openInFileManager(String dirPath) async {
     return await _channel.invokeMethod<bool>('openInFileManager', {

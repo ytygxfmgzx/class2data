@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:class2data/core/result/result.dart';
 import 'package:class2data/data/database/app_database.dart';
+import 'package:class2data/domain/services/attachment_file_service.dart';
 import 'package:class2data/domain/services/credit_balance_service.dart';
 import 'package:class2data/features/attachments/providers/attachment_providers.dart';
 import 'package:class2data/features/children/providers/child_providers.dart';
@@ -36,6 +37,7 @@ class _PackageFormPageState extends ConsumerState<PackageFormPage> {
   DateTime? _validFrom;
   DateTime? _validUntil;
   bool _isLoading = false;
+  int? _oldTotalCredits;
   final List<String> _pendingPhotos = [];
   final List<String> _existingPhotos = [];
   final List<int> _existingPhotoIds = [];
@@ -67,6 +69,7 @@ class _PackageFormPageState extends ConsumerState<PackageFormPage> {
             _validFrom = value.validFrom;
             _validUntil = value.validUntil;
             _notesController.text = value.notes ?? '';
+            _oldTotalCredits = value.totalCredits;
             if (value.totalCredits != null) {
               _totalCreditsController.text = CreditBalanceService()
                   .formatCredits(value.totalCredits!);
@@ -169,6 +172,26 @@ class _PackageFormPageState extends ConsumerState<PackageFormPage> {
         updatedAt: Value(now),
       );
       await repo.updatePackage(entry);
+
+      // 课时数变化时创建 adjust 流水
+      final oldCredits = _oldTotalCredits ?? 0;
+      final newCredits = totalCredits ?? 0;
+      final delta = newCredits - oldCredits;
+      if (delta != 0) {
+        final creditRepo = ref.read(creditTransactionRepositoryProvider);
+        await creditRepo.insertTransaction(
+          CreditTransactionsCompanion(
+            kidCourseId: Value(widget.courseId),
+            packageId: Value(widget.packageId!),
+            type: const Value('adjust'),
+            creditUnitsDelta: Value(delta),
+            reason: const Value('修改课包课时'),
+            transactionDate: Value(now),
+            createdAt: Value(now),
+          ),
+        );
+      }
+
       if (_pendingPhotos.isNotEmpty) {
         await _saveAttachments(widget.packageId!);
       }
@@ -221,12 +244,144 @@ class _PackageFormPageState extends ConsumerState<PackageFormPage> {
     }
   }
 
+  Future<void> _deletePackage() async {
+    if (!_isEditing) return;
+
+    final creditRepo = ref.read(creditTransactionRepositoryProvider);
+    final txResult = await creditRepo.getByPackageId(widget.packageId!);
+    final transactions = switch (txResult) {
+      Ok(:final value) => value,
+      Err() => <CreditTransaction>[],
+    };
+    final hasConsumed = transactions.any((t) => t.creditUnitsDelta < 0);
+
+    if (!mounted) return;
+
+    if (hasConsumed) {
+      _showVoidDialog();
+    } else {
+      _showDirectDeleteDialog();
+    }
+  }
+
+  void _showDirectDeleteDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('删除课包'),
+        content: const Text('确定要删除这个课包吗？删除后无法恢复。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            onPressed: () async {
+              setState(() => _isLoading = true);
+              await AttachmentFileService().deleteOwnerDirectory(
+                'package',
+                widget.packageId!,
+              );
+              final repo = ref.read(packageRepositoryProvider);
+              await repo.deletePackage(widget.packageId!);
+              if (mounted) {
+                ref.read(homeDataVersionProvider.notifier).state++;
+              }
+              if (ctx.mounted) Navigator.pop(ctx);
+              if (mounted) context.pop();
+            },
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showVoidDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('删除课包'),
+        content: const Text(
+          '该课包已有上课消耗记录，删除后剩余课时将被清零，已上课的记录和消耗仍会保留。\n\n此操作不可恢复。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            onPressed: () async {
+              setState(() => _isLoading = true);
+              await AttachmentFileService().deleteOwnerDirectory(
+                'package',
+                widget.packageId!,
+              );
+              final repo = ref.read(packageRepositoryProvider);
+              final creditRepo = ref.read(creditTransactionRepositoryProvider);
+              final balanceService = CreditBalanceService();
+              final now = DateTime.now();
+
+              final txResult = await creditRepo.getByPackageId(
+                widget.packageId!,
+              );
+              final balance = switch (txResult) {
+                Ok(:final value) => balanceService.packageBalance(value),
+                Err() => 0,
+              };
+
+              if (balance != 0) {
+                await repo.voidPackageTransaction(
+                  packageId: widget.packageId!,
+                  voidReason: '删除课包',
+                  voidTx: CreditTransactionsCompanion(
+                    kidCourseId: Value(widget.courseId),
+                    packageId: Value(widget.packageId!),
+                    type: const Value('void'),
+                    creditUnitsDelta: Value(-balance),
+                    reason: const Value('删除课包'),
+                    transactionDate: Value(now),
+                    createdAt: Value(now),
+                  ),
+                );
+              } else {
+                await repo.voidPackage(widget.packageId!, '删除课包');
+              }
+
+              if (mounted) {
+                ref.read(homeDataVersionProvider.notifier).state++;
+              }
+              if (ctx.mounted) Navigator.pop(ctx);
+              if (mounted) context.pop();
+            },
+            child: const Text('确认删除'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? '编辑课包' : '录入课包'),
         actions: [
+          if (_isEditing)
+            IconButton(
+              icon: Icon(
+                Icons.delete_outline,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              tooltip: '删除',
+              onPressed: _isLoading ? null : _deletePackage,
+            ),
           TextButton(
             onPressed: _isLoading ? null : _save,
             child: const Text('保存'),
@@ -428,14 +583,16 @@ class _PackageFormPageState extends ConsumerState<PackageFormPage> {
 
     for (final photoPath in _pendingPhotos) {
       try {
+        // 先读取源文件信息（复制后源文件会被删除）
+        final file = File(photoPath);
+        final fileName = photoPath.split('/').last.split('\\').last;
+        final fileSize = await file.length();
+
         final relativePath = await fileService.copyToPrivateDirectory(
           sourcePath: photoPath,
           ownerType: 'package',
           ownerId: packageId,
         );
-        final file = File(photoPath);
-        final fileName = photoPath.split('/').last.split('\\').last;
-        final fileSize = await file.length();
 
         await attachRepo.insertAttachment(
           AttachmentsCompanion(
@@ -840,14 +997,16 @@ class _PackageFormBottomSheetState
 
     for (final photoPath in _pendingPhotos) {
       try {
+        // 先读取源文件信息（复制后源文件会被删除）
+        final file = File(photoPath);
+        final fileName = photoPath.split('/').last.split('\\').last;
+        final fileSize = await file.length();
+
         final relativePath = await fileService.copyToPrivateDirectory(
           sourcePath: photoPath,
           ownerType: 'package',
           ownerId: packageId,
         );
-        final file = File(photoPath);
-        final fileName = photoPath.split('/').last.split('\\').last;
-        final fileSize = await file.length();
 
         await attachRepo.insertAttachment(
           AttachmentsCompanion(

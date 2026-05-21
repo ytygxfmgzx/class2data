@@ -1,4 +1,5 @@
 import 'package:class2data/core/result/result.dart';
+import 'package:class2data/domain/services/cache_clean_service.dart';
 import 'package:class2data/features/achievements/presentation/achievement_form_page.dart';
 import 'package:class2data/features/achievements/providers/achievement_providers.dart';
 import 'package:class2data/features/backup/presentation/backup_page.dart';
@@ -338,11 +339,76 @@ class _BottomNav extends StatelessWidget {
   }
 }
 
-class _SettingsPage extends ConsumerWidget {
+class _SettingsPage extends ConsumerStatefulWidget {
   const _SettingsPage();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends ConsumerState<_SettingsPage> {
+  String _cacheSizeText = '计算中...';
+  bool _isClearing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCacheSize();
+  }
+
+  Future<void> _loadCacheSize() async {
+    final size = await CacheCleanService().calculateCacheSize();
+    if (!mounted) return;
+    setState(() {
+      _cacheSizeText = _formatBytes(size);
+    });
+  }
+
+  Future<void> _clearCache() async {
+    if (_isClearing) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('清理缓存'),
+        content: Text('当前缓存大小：$_cacheSizeText\n\n确定要清理吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isClearing = true);
+    final freedBytes = await CacheCleanService().clearAllCache();
+    if (!mounted) return;
+
+    setState(() {
+      _isClearing = false;
+      _cacheSizeText = _formatBytes(0);
+    });
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('已清理 ${_formatBytes(freedBytes)}')));
+    _loadCacheSize();
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes <= 0) return '0 B';
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final childrenAsync = ref.watch(activeChildrenProvider);
     final coursesAsync = ref.watch(allActiveCoursesProvider);
 
@@ -405,9 +471,7 @@ class _SettingsPage extends ConsumerWidget {
                 title: '云端备份与恢复',
                 value: '通过 WebDAV 同步',
                 onTap: () async {
-                  await ref
-                      .read(webDavConfigProvider.notifier)
-                      .loaded;
+                  await ref.read(webDavConfigProvider.notifier).loaded;
                   if (!context.mounted) return;
                   final config = ref.read(webDavConfigProvider);
                   if (config.isConfigured) {
@@ -416,6 +480,17 @@ class _SettingsPage extends ConsumerWidget {
                     context.push('/cloud-backup/config');
                   }
                 },
+              ),
+            ],
+          ),
+          _SettingsGroup(
+            title: '存储',
+            children: [
+              _SettingsRow(
+                icon: Icons.cleaning_services_outlined,
+                title: '清理缓存',
+                value: _isClearing ? '清理中...' : _cacheSizeText,
+                onTap: () => _clearCache(),
               ),
             ],
           ),
@@ -435,10 +510,9 @@ class _SettingsPage extends ConsumerWidget {
               FutureBuilder<PackageInfo>(
                 future: PackageInfo.fromPlatform(),
                 builder: (context, snapshot) {
-                  final version =
-                      snapshot.hasData
-                          ? 'v${snapshot.data!.version}'
-                          : '';
+                  final version = snapshot.hasData
+                      ? 'v${snapshot.data!.version}'
+                      : '';
                   return _SettingsRow(
                     icon: Icons.info,
                     title: '版本',

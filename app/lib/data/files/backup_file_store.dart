@@ -336,17 +336,30 @@ class BackupFileStore {
   Future<String> moveToPublicStorage(String tempZipPath) async {
     final fileName = p.basename(tempZipPath);
     if (Platform.isAndroid) {
-      return await _storageChannel.saveToDownloads(fileName, tempZipPath);
+      final publicPath = await _storageChannel.saveToDownloads(
+        fileName,
+        tempZipPath,
+      );
+      await _deleteTempFile(tempZipPath);
+      return publicPath;
     } else if (Platform.isIOS) {
       final docsDir = await getApplicationDocumentsDirectory();
       final backupDir = Directory(p.join(docsDir.path, 'kexiaoji', 'backup'));
       await backupDir.create(recursive: true);
       final publicPath = p.join(backupDir.path, fileName);
       await File(tempZipPath).copy(publicPath);
+      await _deleteTempFile(tempZipPath);
       return publicPath;
     } else {
       return tempZipPath;
     }
+  }
+
+  Future<void> _deleteTempFile(String path) async {
+    try {
+      final file = File(path);
+      if (await file.exists()) await file.delete();
+    } catch (_) {}
   }
 
   /// 获取备份公共目录路径。
@@ -371,6 +384,29 @@ class BackupFileStore {
 
   /// 获取备份目录中最新备份文件信息。
   Future<BackupFileInfo?> getLatestBackup() async {
+    if (Platform.isAndroid) {
+      return await _getLatestBackupViaMediaStore() ??
+          await _getLatestBackupViaFileSystem();
+    }
+    return await _getLatestBackupViaFileSystem();
+  }
+
+  /// 通过 MediaStore 查询最新备份（Android 优先）。
+  Future<BackupFileInfo?> _getLatestBackupViaMediaStore() async {
+    final info = await _storageChannel.getLatestBackupInfo();
+    if (info == null) return null;
+    return BackupFileInfo(
+      path: info['path']! as String,
+      name: info['name']! as String,
+      size: info['size']! as int,
+      modifiedTime: DateTime.fromMillisecondsSinceEpoch(
+        info['lastModified']! as int,
+      ),
+    );
+  }
+
+  /// 通过文件系统遍历查找最新备份（回退方案）。
+  Future<BackupFileInfo?> _getLatestBackupViaFileSystem() async {
     final dirPath = await getBackupPublicDirPath();
     if (dirPath.isEmpty) return null;
     final dir = Directory(dirPath);

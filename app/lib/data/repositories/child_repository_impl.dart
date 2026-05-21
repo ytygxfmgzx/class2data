@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:class2data/core/result/result.dart';
 import 'package:class2data/data/database/app_database.dart';
@@ -6,6 +7,7 @@ import 'package:class2data/data/database/daos/child_dao.dart';
 import 'package:class2data/domain/repositories/child_repository.dart';
 import 'package:class2data/domain/services/attachment_file_service.dart';
 import 'package:class2data/domain/services/avatar_file_service.dart';
+import 'package:path/path.dart' as p;
 
 class ChildRepositoryImpl implements ChildRepository {
   final ChildDao _dao;
@@ -75,6 +77,27 @@ class ChildRepositoryImpl implements ChildRepository {
         try {
           final file = await fileService.getFile(path);
           if (await file.exists()) await file.delete();
+        } catch (_) {}
+      }
+      // 清理残留的附件目录
+      final ownerDirs = <String>{};
+      for (final path in attachmentPaths) {
+        final parts = p.split(path);
+        if (parts.length >= 2) {
+          ownerDirs.add(p.join(parts[0], parts[1]));
+        }
+      }
+      for (final ownerDir in ownerDirs) {
+        try {
+          final dir = Directory(
+            p.join(
+              (await fileService.getAttachmentsDirectory()).path,
+              ownerDir,
+            ),
+          );
+          if (await dir.exists()) {
+            await dir.delete(recursive: true);
+          }
         } catch (_) {}
       }
       return const Ok(null);

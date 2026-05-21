@@ -1,5 +1,6 @@
 import 'package:class2data/core/result/result.dart';
 import 'package:class2data/data/database/app_database.dart';
+import 'package:class2data/domain/services/credit_balance_service.dart';
 import 'package:class2data/domain/services/course_statistics_service.dart';
 import 'package:class2data/features/class_records/providers/class_record_providers.dart';
 import 'package:class2data/features/growth/providers/growth_providers.dart'
@@ -97,3 +98,68 @@ final courseByIdProvider = FutureProvider.family<KidCourse?, int>((
     Err() => null,
   };
 });
+
+class CourseListSummary {
+  final bool hasCreditPackages;
+  final int totalCredits;
+  final bool hasPeriodPackages;
+  final DateTime? latestExpiry;
+
+  const CourseListSummary({
+    required this.hasCreditPackages,
+    required this.totalCredits,
+    required this.hasPeriodPackages,
+    this.latestExpiry,
+  });
+
+  bool get hasAnyInfo =>
+      (hasCreditPackages && totalCredits > 0) || hasPeriodPackages;
+}
+
+/// 课程列表摘要：剩余课时 + 周期卡截止日期
+final courseListSummaryProvider = FutureProvider.family<CourseListSummary, int>(
+  (ref, courseId) async {
+    final packagesResult = await ref.watch(
+      activePackagesByCourseProvider(courseId).future,
+    );
+    final packages = switch (packagesResult) {
+      Ok(:final value) => value,
+      Err() => <Package>[],
+    };
+
+    final creditPackages = packages
+        .where((p) => p.type != 'period_pack')
+        .toList();
+    final periodPackages = packages
+        .where((p) => p.type == 'period_pack')
+        .toList();
+
+    int totalCredits = 0;
+    if (creditPackages.isNotEmpty) {
+      final txResult = await ref.watch(
+        creditTransactionByCourseProvider(courseId).future,
+      );
+      final transactions = switch (txResult) {
+        Ok(:final value) => value,
+        Err() => <CreditTransaction>[],
+      };
+      totalCredits = CreditBalanceService().courseBalance(transactions);
+    }
+
+    DateTime? latestExpiry;
+    for (final p in periodPackages) {
+      if (p.validUntil != null) {
+        if (latestExpiry == null || p.validUntil!.isAfter(latestExpiry)) {
+          latestExpiry = p.validUntil;
+        }
+      }
+    }
+
+    return CourseListSummary(
+      hasCreditPackages: creditPackages.isNotEmpty,
+      totalCredits: totalCredits,
+      hasPeriodPackages: periodPackages.isNotEmpty,
+      latestExpiry: latestExpiry,
+    );
+  },
+);

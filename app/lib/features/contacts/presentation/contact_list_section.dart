@@ -14,36 +14,29 @@ class ContactListSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final contactsAsync = ref.watch(contactsByCourseProvider(courseId));
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        contactsAsync.when(
-          loading: () => const SizedBox.shrink(),
-          error: (e, _) => Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text('加载失败: $e'),
-          ),
-          data: (result) => switch (result) {
-            Ok(:final value) =>
-              value.isEmpty
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Text('暂无联系人'),
-                    )
-                  : Column(
-                      children: value
-                          .map(
-                            (c) => _ContactRow(contact: c, courseId: courseId),
-                          )
-                          .toList(),
-                    ),
-            Err(:final error) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(error.message),
-            ),
-          },
+    return contactsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (e, _) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Text('加载失败: $e'),
+      ),
+      data: (result) => switch (result) {
+        Ok(:final value) =>
+          value.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Text('暂无联系人'),
+                )
+              : ListView.builder(
+                  itemCount: value.length,
+                  itemBuilder: (context, index) =>
+                      _ContactRow(contact: value[index], courseId: courseId),
+                ),
+        Err(:final error) => Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(error.message),
         ),
-      ],
+      },
     );
   }
 }

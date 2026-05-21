@@ -13,4 +13,5 @@ mixin _$PackageDaoMixin on DatabaseAccessor<AppDatabase> {
       attachedDatabase.creditTransactions;
   $AchievementsTable get achievements => attachedDatabase.achievements;
   $PaymentsTable get payments => attachedDatabase.payments;
+  $AttachmentsTable get attachments => attachedDatabase.attachments;
 }

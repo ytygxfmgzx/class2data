@@ -86,15 +86,11 @@ class CourseDetailPage extends ConsumerWidget {
                       // 成长记录
                       AchievementListSection(courseId: courseId),
                       // 课包
-                      SingleChildScrollView(
-                        child: PackageListSection(courseId: courseId),
-                      ),
+                      PackageListSection(courseId: courseId),
                       // 计划
                       _ScheduleListTab(courseId: courseId),
                       // 联系人
-                      SingleChildScrollView(
-                        child: ContactListSection(courseId: courseId),
-                      ),
+                      ContactListSection(courseId: courseId),
                     ],
                   ),
                 ),

@@ -528,7 +528,7 @@ class _FilterFab extends StatelessWidget {
     final isFiltered =
         !filter.showAllChildren || !filter.showAllTypes || !filter.showAllDates;
 
-    return FloatingActionButton.small(
+    return FloatingActionButton(
       onPressed: () => _showFilterSheet(context),
       tooltip: '筛选',
       backgroundColor: isFiltered
@@ -537,10 +537,7 @@ class _FilterFab extends StatelessWidget {
       foregroundColor: isFiltered
           ? theme.colorScheme.onPrimaryContainer
           : theme.colorScheme.onSurfaceVariant,
-      child: Icon(
-        isFiltered ? Icons.filter_list : Icons.filter_list_outlined,
-        size: 20,
-      ),
+      child: Icon(isFiltered ? Icons.filter_list : Icons.filter_list_outlined),
     );
   }
 

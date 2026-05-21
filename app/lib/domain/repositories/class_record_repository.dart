@@ -16,6 +16,10 @@ abstract class ClassRecordRepository {
     CreditTransactionsCompanion? creditTx,
   );
   Future<Result<void>> updateRecord(ClassRecordsCompanion entry);
+  Future<Result<void>> updateRecordWithCreditTransaction(
+    ClassRecordsCompanion record,
+    CreditTransactionsCompanion? creditTx,
+  );
   Future<Result<void>> deleteRecord(int id);
   Future<Result<void>> deleteTransactionsByRecordId(int recordId);
 }

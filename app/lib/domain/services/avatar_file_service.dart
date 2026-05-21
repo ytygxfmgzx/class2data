@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 
 import '../../data/database/app_database.dart' show getDatabaseDir;
+import 'cache_clean_service.dart';
 
 class AvatarFileService {
   static const _avatarsDir = 'avatars';
@@ -28,6 +29,15 @@ class AvatarFileService {
     final destPath = p.join(dir.path, fileName);
 
     await File(sourcePath).copy(destPath);
+
+    // 复制成功后删除源文件并清理 image_picker 残留缓存
+    try {
+      final sourceFile = File(sourcePath);
+      if (await sourceFile.exists()) {
+        await sourceFile.delete();
+      }
+      await CacheCleanService().clearImagePickerCache();
+    } catch (_) {}
 
     return p.join(_avatarsDir, fileName);
   }

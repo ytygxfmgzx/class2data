@@ -1,5 +1,6 @@
 package com.class2data.class2data
 
+import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Intent
 import android.net.Uri
@@ -28,6 +29,9 @@ class MainActivity : FlutterActivity() {
                     "getBackupDirPath" -> {
                         getBackupDirPath(result)
                     }
+                    "getLatestBackupInfo" -> {
+                        getLatestBackupInfo(result)
+                    }
                     "openInFileManager" -> {
                         val dirPath = call.argument<String>("dirPath")!!
                         openInFileManager(dirPath, result)
@@ -43,6 +47,72 @@ class MainActivity : FlutterActivity() {
             "kexiaoji/backup",
         )
         result.success(dir.absolutePath)
+    }
+
+    private fun getLatestBackupInfo(result: MethodChannel.Result) {
+        try {
+            val relativePath = "${Environment.DIRECTORY_DOWNLOADS}/kexiaoji/backup"
+
+            var selection = "${MediaStore.Downloads.RELATIVE_PATH} = ? AND ${MediaStore.Downloads.MIME_TYPE} = ?"
+            val selectionArgs = mutableListOf("$relativePath/", "application/zip")
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                selection += " AND ${MediaStore.Downloads.IS_TRASHED} = 0"
+            }
+
+            val sortOrder = "${MediaStore.Downloads.DATE_MODIFIED} DESC"
+
+            val cursor = contentResolver.query(
+                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                arrayOf(
+                    MediaStore.Downloads._ID,
+                    MediaStore.Downloads.DISPLAY_NAME,
+                    MediaStore.Downloads.SIZE,
+                    MediaStore.Downloads.DATE_MODIFIED,
+                    MediaStore.Downloads.DATA,
+                ),
+                selection,
+                selectionArgs.toTypedArray(),
+                sortOrder,
+            )
+
+            if (cursor == null) {
+                result.success(null)
+                return
+            }
+
+            cursor.use {
+                while (it.moveToNext()) {
+                    val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Downloads._ID))
+                    val name = it.getString(it.getColumnIndexOrThrow(MediaStore.Downloads.DISPLAY_NAME))
+                    val size = it.getLong(it.getColumnIndexOrThrow(MediaStore.Downloads.SIZE))
+                    val dateModified = it.getLong(it.getColumnIndexOrThrow(MediaStore.Downloads.DATE_MODIFIED))
+                    val dataPath = it.getString(it.getColumnIndexOrThrow(MediaStore.Downloads.DATA))
+
+                    // 通过 ContentResolver 验证文件真正可读（排除已删除/回收站幽灵记录）
+                    val contentUri = ContentUris.withAppendedId(
+                        MediaStore.Downloads.EXTERNAL_CONTENT_URI, id,
+                    )
+                    try {
+                        contentResolver.openInputStream(contentUri)?.close()
+                    } catch (_: Exception) {
+                        continue
+                    }
+
+                    val info = hashMapOf<String, Any>(
+                        "name" to name,
+                        "size" to size,
+                        "lastModified" to dateModified * 1000L,
+                        "path" to dataPath,
+                    )
+                    result.success(info)
+                    return
+                }
+            }
+            result.success(null)
+        } catch (e: Exception) {
+            result.success(null)
+        }
     }
 
     private fun saveToDownloads(
@@ -77,6 +147,7 @@ class MainActivity : FlutterActivity() {
                 contentResolver.openOutputStream(uri)?.use { out ->
                     sourceFile.inputStream().use { it.copyTo(out) }
                 }
+                sourceFile.delete()
                 val dir = File(
                     Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
                     "kexiaoji/backup",
@@ -90,6 +161,7 @@ class MainActivity : FlutterActivity() {
                 if (!dir.exists()) dir.mkdirs()
                 val target = File(dir, fileName)
                 sourceFile.copyTo(target, overwrite = true)
+                sourceFile.delete()
                 result.success(target.absolutePath)
             }
         } catch (e: Exception) {

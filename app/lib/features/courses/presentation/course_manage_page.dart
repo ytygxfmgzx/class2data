@@ -1,5 +1,6 @@
 import 'package:class2data/core/result/result.dart';
 import 'package:class2data/data/database/app_database.dart';
+import 'package:class2data/domain/services/credit_balance_service.dart';
 import 'package:class2data/features/children/providers/child_providers.dart';
 import 'package:class2data/features/courses/providers/course_providers.dart';
 import 'package:class2data/features/home/providers/home_providers.dart';
@@ -70,7 +71,6 @@ class CourseManagePage extends ConsumerWidget {
       );
     }
 
-    final theme = Theme.of(context);
     return ListView.builder(
       itemCount: courses.length,
       itemBuilder: (context, index) {
@@ -92,58 +92,13 @@ class CourseManagePage extends ConsumerWidget {
           background: Container(
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 16),
-            color: theme.colorScheme.error,
-            child: Icon(Icons.delete, color: theme.colorScheme.onError),
-          ),
-          child: InkWell(
-            onTap: () => context.push('/courses/${course.id}'),
-            child: Container(
-              height: 52,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: theme.colorScheme.outlineVariant,
-                    width: 1,
-                  ),
-                ),
-              ),
-              child: Row(
-                children: [
-                  if (child != null) ...[
-                    ChildAvatar(
-                      name: child.name,
-                      avatarPath: child.avatarPath,
-                      radius: 14,
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          course.name,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          '${child?.name ?? ""} · ${course.institutionName}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            color: Theme.of(context).colorScheme.error,
+            child: Icon(
+              Icons.delete,
+              color: Theme.of(context).colorScheme.onError,
             ),
           ),
+          child: _CourseListItem(course: course, child: child),
         );
       },
     );
@@ -169,6 +124,129 @@ class CourseManagePage extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CourseListItem extends ConsumerWidget {
+  final KidCourse course;
+  final ChildrenData? child;
+
+  const _CourseListItem({required this.course, this.child});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final summaryAsync = ref.watch(courseListSummaryProvider(course.id));
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: () => context.push('/courses/${course.id}'),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        constraints: const BoxConstraints(minHeight: 52),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: theme.colorScheme.outlineVariant,
+              width: 1,
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            if (child != null) ...[
+              ChildAvatar(
+                name: child!.name,
+                avatarPath: child!.avatarPath,
+                radius: 14,
+              ),
+              const SizedBox(width: 8),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    course.name,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    '${child?.name ?? ""} · ${course.institutionName}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            summaryAsync.when(
+              data: (summary) => _buildSummaryRight(theme, summary),
+              loading: () => const SizedBox.shrink(),
+              error: (_, _) => const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryRight(ThemeData theme, CourseListSummary summary) {
+    if (!summary.hasAnyInfo) return const SizedBox.shrink();
+
+    final showCredits = summary.hasCreditPackages;
+    final showPeriod = summary.hasPeriodPackages;
+
+    if (showCredits && showPeriod) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildCreditsLabel(theme, summary.totalCredits, showPrefix: true),
+          const SizedBox(height: 2),
+          _buildPeriodLabel(theme, summary.latestExpiry, showPrefix: true),
+        ],
+      );
+    }
+
+    if (showCredits) {
+      return _buildCreditsLabel(theme, summary.totalCredits);
+    }
+
+    if (showPeriod) {
+      return _buildPeriodLabel(theme, summary.latestExpiry);
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildCreditsLabel(
+    ThemeData theme,
+    int credits, {
+    bool showPrefix = false,
+  }) {
+    final service = CreditBalanceService();
+    final prefix = showPrefix ? '课时包' : '';
+    return Text(
+      '$prefix余${service.formatCredits(credits)}节',
+      style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+    );
+  }
+
+  Widget _buildPeriodLabel(
+    ThemeData theme,
+    DateTime? expiry, {
+    bool showPrefix = false,
+  }) {
+    final prefix = showPrefix ? '周期卡' : '';
+    final suffix = expiry != null ? '${expiry.month}月${expiry.day}日到期' : '长期有效';
+    return Text(
+      '$prefix$suffix',
+      style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
     );
   }
 }

@@ -11,6 +11,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// 首页数据版本号，修改计划/课包后递增以触发刷新
 final homeDataVersionProvider = StateProvider<int>((ref) => 0);
 
+/// 日历圆点颜色状态
+enum CalendarDotColor {
+  /// 已过下课时间且无记录（漏记）
+  pastPending,
+
+  /// 未到上课时间（未来课程）
+  upcoming,
+
+  /// 已有记录（含独立记录）
+  recorded,
+}
+
 /// 首页日列表项：合并计划课和已记录信息
 class HomeDayItem {
   final int scheduleId;
@@ -45,6 +57,27 @@ class HomeDayItem {
 
   bool get isRecorded => recordId != null;
   bool get isPending => recordId == null;
+
+  /// 计算该课程在日历上的圆点颜色状态
+  CalendarDotColor calendarDotState(DateTime now) {
+    if (recordId != null) return CalendarDotColor.recorded;
+    final courseEnd = _parseDateTime(date, endTime);
+    return courseEnd.isBefore(now)
+        ? CalendarDotColor.pastPending
+        : CalendarDotColor.upcoming;
+  }
+
+  static DateTime _parseDateTime(String dateStr, String timeStr) {
+    final d = dateStr.split('-');
+    final t = timeStr.split(':');
+    return DateTime(
+      int.parse(d[0]),
+      int.parse(d[1]),
+      int.parse(d[2]),
+      int.parse(t[0]),
+      int.parse(t[1]),
+    );
+  }
 }
 
 /// 首页：生成一周内所有课程项（含已记录）

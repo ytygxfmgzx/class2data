@@ -5,7 +5,7 @@ import '../tables/tables.dart';
 
 part 'package_dao.g.dart';
 
-@DriftAccessor(tables: [Packages, CreditTransactions, Payments])
+@DriftAccessor(tables: [Packages, CreditTransactions, Payments, Attachments])
 class PackageDao extends DatabaseAccessor<AppDatabase> with _$PackageDaoMixin {
   PackageDao(super.db);
 
@@ -86,12 +86,16 @@ class PackageDao extends DatabaseAccessor<AppDatabase> with _$PackageDaoMixin {
     });
   }
 
-  /// 事务：彻底删除课包及其关联流水
+  /// 事务：彻底删除课包及其关联流水和附件记录
   Future<void> deletePackage(int packageId) {
     return transaction(() async {
       await (delete(
         creditTransactions,
       )..where((t) => t.packageId.equals(packageId))).go();
+      await (delete(attachments)..where(
+            (t) => t.ownerType.equals('package') & t.ownerId.equals(packageId),
+          ))
+          .go();
       await (delete(packages)..where((t) => t.id.equals(packageId))).go();
     });
   }

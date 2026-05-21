@@ -428,10 +428,13 @@ class _BackupSuccessCard extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: () => _shareFile(context, state.filePath!),
-            icon: const Icon(Icons.share, size: 16),
-            label: const Text('分享备份文件'),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _shareFile(context, state.filePath!),
+              icon: const Icon(Icons.share, size: 16),
+              label: const Text('分享备份文件'),
+            ),
           ),
         ],
       ),

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 
 import '../../data/database/app_database.dart' show getDatabaseDir;
+import 'cache_clean_service.dart';
 
 /// 附件文件管理服务。
 ///
@@ -44,6 +45,14 @@ class AttachmentFileService {
 
     await sourceFile.copy(destPath);
 
+    // 复制成功后删除源文件并清理 image_picker 残留缓存
+    try {
+      if (await sourceFile.exists()) {
+        await sourceFile.delete();
+      }
+      await CacheCleanService().clearImagePickerCache();
+    } catch (_) {}
+
     // 返回相对路径（相对于 attachments 目录）
     return p.join(ownerType, '$ownerId', fileName);
   }
@@ -72,6 +81,20 @@ class AttachmentFileService {
       final file = await getFile(relativePath);
       if (await file.exists()) {
         await file.delete();
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// 删除指定业务对象的附件目录（含所有文件）。
+  Future<bool> deleteOwnerDirectory(String ownerType, int ownerId) async {
+    try {
+      final dir = await getAttachmentsDirectory();
+      final subDir = Directory(p.join(dir.path, ownerType, '$ownerId'));
+      if (await subDir.exists()) {
+        await subDir.delete(recursive: true);
       }
       return true;
     } catch (_) {

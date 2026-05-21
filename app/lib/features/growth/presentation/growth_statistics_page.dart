@@ -451,6 +451,7 @@ class _CourseStatsCardState extends State<_CourseStatsCard> {
   String _formatPeriod(DateTime? firstDate) {
     if (firstDate == null) return '--';
     final now = DateTime.now();
+    if (firstDate.isAfter(now)) return '--';
     int years = now.year - firstDate.year;
     int months = now.month - firstDate.month;
     if (now.day < firstDate.day) months--;
@@ -655,7 +656,7 @@ class _StatisticsFilterFab extends StatelessWidget {
     final theme = Theme.of(context);
     final isFiltered = !filter.showAllDates;
 
-    return FloatingActionButton.small(
+    return FloatingActionButton(
       onPressed: () => _showFilterSheet(context),
       tooltip: '筛选',
       backgroundColor: isFiltered
@@ -664,10 +665,7 @@ class _StatisticsFilterFab extends StatelessWidget {
       foregroundColor: isFiltered
           ? theme.colorScheme.onPrimaryContainer
           : theme.colorScheme.onSurfaceVariant,
-      child: Icon(
-        isFiltered ? Icons.filter_list : Icons.filter_list_outlined,
-        size: 20,
-      ),
+      child: Icon(isFiltered ? Icons.filter_list : Icons.filter_list_outlined),
     );
   }
 

@@ -38,28 +38,32 @@ class CreditTransactionsByPackageNotifier
   }
 }
 
-/// 计算课包余额
+/// 计算课包余额（响应式：依赖 stream 版流水 provider）
 final packageBalanceProvider = FutureProvider.family<int, int>((
   ref,
   packageId,
 ) async {
-  final repo = ref.watch(creditTransactionRepositoryProvider);
-  final result = await repo.getByPackageId(packageId);
-  return switch (result) {
-    Ok(:final value) => CreditBalanceService().packageBalance(value),
-    Err() => 0,
+  final txAsync = await ref.watch(
+    creditTransactionsByPackageProvider(packageId).future,
+  );
+  final transactions = switch (txAsync) {
+    Ok(:final value) => value,
+    Err() => <CreditTransaction>[],
   };
+  return CreditBalanceService().packageBalance(transactions);
 });
 
-/// 计算课程总余额
+/// 计算课程总余额（响应式：依赖 stream 版流水 provider）
 final courseBalanceProvider = FutureProvider.family<int, int>((
   ref,
   courseId,
 ) async {
-  final repo = ref.watch(creditTransactionRepositoryProvider);
-  final result = await repo.getByCourseId(courseId);
-  return switch (result) {
-    Ok(:final value) => CreditBalanceService().courseBalance(value),
-    Err() => 0,
+  final txAsync = await ref.watch(
+    creditTransactionsByCourseProvider(courseId).future,
+  );
+  final transactions = switch (txAsync) {
+    Ok(:final value) => value,
+    Err() => <CreditTransaction>[],
   };
+  return CreditBalanceService().courseBalance(transactions);
 });
