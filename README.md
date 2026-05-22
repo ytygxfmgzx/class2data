@@ -83,3 +83,7 @@ dart run build_runner build --delete-conflicting-outputs  # 涉及 Drift/Riverpo
 ## 许可
 
 [MIT License](LICENSE)
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=ytygxfmgzx/class2data&type=Date)](https://star-history.com/#ytygxfmgzx/class2data&Date)
