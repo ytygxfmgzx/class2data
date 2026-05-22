@@ -1,7 +1,7 @@
 name: class2data
 description: "课小记 — 家庭课外班账本和成长档案"
 publish_to: 'none'
-version: 0.3.0+3
+version: 0.4.0+1
 
 environment:
   sdk: ^3.11.3
