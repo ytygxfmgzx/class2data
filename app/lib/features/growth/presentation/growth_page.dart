@@ -118,13 +118,66 @@ class GrowthPage extends ConsumerWidget {
           return _FeedList(events: events);
         },
       ),
-      floatingActionButton: _FilterFab(
-        children: children,
-        filter: filter,
-        onFilterChanged: (f) =>
-            ref.read(growthFilterProvider.notifier).state = f,
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            heroTag: 'addAchievement',
+            onPressed: () => _addAchievement(context, children),
+            tooltip: '成长记录',
+            child: const Icon(Icons.emoji_events_outlined),
+          ),
+          const SizedBox(height: 12),
+          _FilterFab(
+            children: children,
+            filter: filter,
+            onFilterChanged: (f) =>
+                ref.read(growthFilterProvider.notifier).state = f,
+          ),
+        ],
       ),
     );
+  }
+
+  Future<void> _addAchievement(
+    BuildContext context,
+    List<ChildrenData> children,
+  ) async {
+    ChildrenData? selected;
+    if (children.length == 1) {
+      selected = children.first;
+    } else {
+      selected = await showModalBottomSheet<ChildrenData>(
+        context: context,
+        builder: (ctx) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text('选择孩子',
+                    style: Theme.of(ctx).textTheme.titleLarge),
+              ),
+              ...children.map(
+                (c) => ListTile(
+                  leading: ChildAvatar(
+                    name: c.name,
+                    avatarPath: c.avatarPath,
+                    radius: 16,
+                  ),
+                  title: Text(c.name),
+                  onTap: () => Navigator.pop(ctx, c),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    if (selected != null && context.mounted) {
+      await context.push('/children/${selected.id}/achievements/add');
+    }
   }
 
   Future<void> _addRecord(

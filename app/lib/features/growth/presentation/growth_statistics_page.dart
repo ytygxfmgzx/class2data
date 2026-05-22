@@ -8,6 +8,18 @@ import 'package:class2data/shared/widgets/child_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// 课程色板，卡片头部色块和占比进度条共用
+const _kCourseColors = [
+  Color(0xFF2563EB), // 蓝
+  Color(0xFF10B981), // 绿
+  Color(0xFFF59E0B), // 橙
+  Color(0xFFEF4444), // 红
+  Color(0xFF8B5CF6), // 紫
+  Color(0xFFEC4899), // 粉
+];
+
+Color _courseColor(int index) => _kCourseColors[index % _kCourseColors.length];
+
 class GrowthStatisticsPage extends ConsumerStatefulWidget {
   const GrowthStatisticsPage({super.key});
 
@@ -65,8 +77,10 @@ class _GrowthStatisticsPageState extends ConsumerState<GrowthStatisticsPage>
     final filter = ref.watch(statisticsFilterProvider);
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF2F2F7),
       appBar: AppBar(
-        title: const Text('统计'),
+        title: const Text('成长统计'),
+        backgroundColor: const Color(0xFFF2F2F7),
         bottom: needsTabs
             ? TabBar(
                 controller: _tabController,
@@ -108,6 +122,8 @@ class _GrowthStatisticsPageState extends ConsumerState<GrowthStatisticsPage>
   }
 }
 
+// === 孩子统计视图 ===
+
 class _ChildStatsView extends ConsumerWidget {
   final int childId;
 
@@ -117,7 +133,7 @@ class _ChildStatsView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final coursesAsync = ref.watch(coursesByChildProvider(childId));
     final statsAsync = ref.watch(childCourseStatisticsProvider(childId));
-    final totalAsync = ref.watch(childTotalStatisticsProvider(childId));
+    final overviewAsync = ref.watch(childOverviewStatsProvider(childId));
 
     final courses = switch (coursesAsync) {
       AsyncData(:final value) => switch (value) {
@@ -127,42 +143,35 @@ class _ChildStatsView extends ConsumerWidget {
       _ => <KidCourse>[],
     };
 
-    final child = ref
-        .watch(activeChildrenProvider)
-        .whenOrNull(
-          data: (result) => switch (result) {
-            Ok(:final value) => value.where((c) => c.id == childId).firstOrNull,
-            Err() => null,
-          },
-        );
-
     return statsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('加载失败: $e')),
       data: (statsMap) {
         if (courses.isEmpty) {
-          return const Center(child: Text('还没有课程'));
+          return const Center(
+            child: Text('还没有课程', style: TextStyle(color: Color(0xFF8E8E93))),
+          );
         }
 
-        final totalStats = totalAsync.whenOrNull(data: (s) => s);
-        final totalDuration = totalStats?.totalDurationMinutes ?? 0;
-        final totalSpent = totalStats?.totalSpentCents ?? 0;
+        final overview = overviewAsync.whenOrNull(data: (s) => s);
+        final totalDuration = overview?.totalDurationMinutes ?? 0;
+        final totalSpent = overview?.totalSpentCents ?? 0;
 
         return ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
           children: [
-            // 顶部汇总统计
-            _SummaryBar(totalDuration: totalDuration, totalSpent: totalSpent),
-            const SizedBox(height: 16),
-            // 各课程统计卡片
-            for (final course in courses)
-              _CourseStatsCard(
-                course: course,
-                stats: statsMap[course.id],
-                childName: child?.name,
-                childAvatarPath: child?.avatarPath,
-                totalDuration: totalDuration,
-                totalSpent: totalSpent,
+            _OverviewSection(overview: overview),
+            const SizedBox(height: 12),
+            for (int i = 0; i < courses.length; i++)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _CourseStatsCard(
+                  course: courses[i],
+                  colorIndex: i,
+                  stats: statsMap[courses[i].id],
+                  totalDuration: totalDuration,
+                  totalSpent: totalSpent,
+                ),
               ),
           ],
         );
@@ -171,109 +180,128 @@ class _ChildStatsView extends ConsumerWidget {
   }
 }
 
-class _SummaryBar extends StatelessWidget {
-  final int totalDuration;
-  final int totalSpent;
+// === 顶部总览区域 ===
 
-  const _SummaryBar({required this.totalDuration, required this.totalSpent});
+class _OverviewSection extends StatelessWidget {
+  final ChildOverviewStats? overview;
+
+  const _OverviewSection({this.overview});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final formatter = CreditBalanceFormatter();
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: Column(
-              children: [
-                Icon(
-                  Icons.timer,
-                  size: 20,
-                  color: theme.colorScheme.onPrimaryContainer,
+          Row(
+            children: [
+              Expanded(
+                child: _OverviewCell(
+                  label: '总上课时长',
+                  value: _formatDuration(overview?.totalDurationMinutes ?? 0),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '总时长',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
+              ),
+              _verticalDivider(),
+              Expanded(
+                child: _OverviewCell(
+                  label: '总花费',
+                  value: formatter.formatAmount(overview?.totalSpentCents ?? 0),
                 ),
-                Text(
-                  _formatDuration(totalDuration),
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Container(
-            width: 1,
-            height: 40,
-            color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.2),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 10),
+            child: Divider(height: 1, thickness: 0.5, color: Color(0xFFE5E5EA)),
           ),
-          Expanded(
-            child: Column(
-              children: [
-                Icon(
-                  Icons.payments,
-                  size: 20,
-                  color: theme.colorScheme.onPrimaryContainer,
+          Row(
+            children: [
+              Expanded(
+                child: _OverviewCell(
+                  label: '第一次上课',
+                  value: _formatDate(overview?.firstClassDate),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '总花费',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
+              ),
+              _verticalDivider(),
+              Expanded(
+                child: _OverviewCell(
+                  label: '第一次花费',
+                  value: _formatDate(overview?.firstSpentDate),
                 ),
-                Text(
-                  formatter.formatAmount(totalSpent),
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
+  Widget _verticalDivider() {
+    return Container(
+      width: 1,
+      height: 36,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      color: const Color(0xFFC6C6C8),
+    );
+  }
+
   String _formatDuration(int totalMinutes) {
-    if (totalMinutes == 0) return '0分钟';
+    if (totalMinutes == 0) return '--';
     if (totalMinutes >= 600) {
       return '${(totalMinutes / 60).toStringAsFixed(1)}小时';
     }
     return '$totalMinutes分钟';
   }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return '--';
+    return '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
+  }
 }
+
+class _OverviewCell extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _OverviewCell({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Color(0xFF8E8E93)),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+      ],
+    );
+  }
+}
+
+// === 课程统计卡片 ===
 
 class _CourseStatsCard extends StatefulWidget {
   final KidCourse course;
+  final int colorIndex;
   final CourseStatistics? stats;
-  final String? childName;
-  final String? childAvatarPath;
   final int totalDuration;
   final int totalSpent;
 
   const _CourseStatsCard({
     required this.course,
+    required this.colorIndex,
     required this.stats,
-    this.childName,
-    this.childAvatarPath,
     required this.totalDuration,
     required this.totalSpent,
   });
@@ -287,163 +315,234 @@ class _CourseStatsCardState extends State<_CourseStatsCard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final formatter = CreditBalanceFormatter();
     final stats = widget.stats;
-
+    final formatter = CreditBalanceFormatter();
+    final color = _courseColor(widget.colorIndex);
     final durationMinutes = stats?.totalDurationMinutes ?? 0;
     final spentCents = stats?.totalSpentCents ?? 0;
-    final timePercent = widget.totalDuration > 0
-        ? (durationMinutes / widget.totalDuration * 100).toStringAsFixed(2)
-        : '--';
-    final spentPercent = widget.totalSpent > 0
-        ? (spentCents / widget.totalSpent * 100).toStringAsFixed(2)
-        : '--';
+
+    final timeFraction = widget.totalDuration > 0
+        ? durationMinutes / widget.totalDuration
+        : 0.0;
+    final spentFraction = widget.totalSpent > 0
+        ? spentCents / widget.totalSpent
+        : 0.0;
 
     final hasBreakdown =
         stats != null && stats.feeBreakdown.isNotEmpty && spentCents > 0;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 头部：孩子头像 + 课程信息
-            Row(
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── 标题行：色块+课程名+机构 | 剩余课程 badge ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (widget.childName != null)
-                  ChildAvatar(
-                    name: widget.childName!,
-                    avatarPath: widget.childAvatarPath,
-                    radius: 14,
+                // 左侧：色块 + 课程信息
+                Container(
+                  margin: const EdgeInsets.only(top: 5),
+                  child: Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                if (widget.childName != null) const SizedBox(width: 10),
+                ),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         widget.course.name,
-                        style: theme.textTheme.titleSmall?.copyWith(
+                        style: const TextStyle(
+                          fontSize: 15,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       if (widget.course.institutionName != null &&
                           widget.course.institutionName!.isNotEmpty)
-                        Text(
-                          widget.course.institutionName!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: theme.colorScheme.onSurfaceVariant,
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            widget.course.institutionName!,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF8E8E93),
+                            ),
                           ),
                         ),
                     ],
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // 统计数据网格
-            Row(
-              children: [
-                Expanded(
-                  child: _StatCell(
-                    icon: Icons.calendar_today,
-                    label: '已学',
-                    value: _formatPeriod(stats?.firstClassDate),
+                // 右侧：剩余课程 badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
                   ),
-                ),
-                Expanded(
-                  child: _StatCell(
-                    icon: Icons.school,
-                    label: '上课',
-                    value: '${stats?.classCount ?? 0}节',
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF2F2F7),
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _StatCell(
-                    icon: Icons.timer,
-                    label: '总时长',
-                    value: _formatDuration(durationMinutes),
-                  ),
-                ),
-                Expanded(
-                  child: _StatCell(
-                    icon: Icons.playlist_add_check,
-                    label: '剩余',
-                    value:
-                        '${formatter.formatCredits(stats?.remainingCredits ?? 0)}节',
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            // 花费行（可点击展开）
-            GestureDetector(
-              onTap: hasBreakdown
-                  ? () => setState(() => _feeExpanded = !_feeExpanded)
-                  : null,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _StatCell(
-                      icon: Icons.payments,
-                      label: '花费',
-                      value: formatter.formatAmount(spentCents),
-                      trailing: hasBreakdown
-                          ? AnimatedRotation(
-                              turns: _feeExpanded ? 0.25 : 0,
-                              duration: const Duration(milliseconds: 200),
-                              child: Icon(
-                                Icons.chevron_right,
-                                size: 18,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            )
-                          : null,
+                  child: Text(
+                    '剩余${formatter.formatCredits(stats?.remainingCredits ?? 0)}节',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF8E8E93),
                     ),
                   ),
-                  const Expanded(child: SizedBox()),
+                ),
+              ],
+            ),
+          ),
+
+          // ── 分组1：日期（2×2）──
+          const Divider(
+            height: 1,
+            thickness: 0.5,
+            indent: 16,
+            endIndent: 16,
+            color: Color(0xFFE5E5EA),
+          ),
+          _StatGrid(
+            children: [
+              _StatItem(
+                label: '第一次上课',
+                value: _formatDate(stats?.firstClassDate),
+              ),
+              _StatItem(
+                label: '上一次上课',
+                value: _formatDate(stats?.lastClassDate),
+              ),
+              _StatItem(
+                label: '第一次花费',
+                value: _formatDate(stats?.firstSpentDate),
+              ),
+              _StatItem(
+                label: '上一次花费',
+                value: _formatDate(stats?.lastSpentDate),
+              ),
+            ],
+          ),
+
+          // ── 分组2：时间（2×2）──
+          const Divider(
+            height: 1,
+            thickness: 0.5,
+            indent: 16,
+            endIndent: 16,
+            color: Color(0xFFE5E5EA),
+          ),
+          _StatGrid(
+            children: [
+              _StatItem(
+                label: '已学总时长',
+                value: _formatPeriod(stats?.firstClassDate),
+              ),
+              _StatItem(
+                label: '上课总时长',
+                value: _formatDuration(durationMinutes),
+              ),
+              _StatItem(label: '已上课节数', value: '${stats?.classCount ?? 0}节'),
+              _StatItem(
+                label: '总购买节数',
+                value:
+                    '${formatter.formatCredits(stats?.purchasedCredits ?? 0)}节',
+              ),
+            ],
+          ),
+
+          // ── 分组3：占比（进度条）──
+          const Divider(
+            height: 1,
+            thickness: 0.5,
+            indent: 16,
+            endIndent: 16,
+            color: Color(0xFFE5E5EA),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+            child: Column(
+              children: [
+                _RatioBar(label: '时间占比', fraction: timeFraction, color: color),
+                const SizedBox(height: 10),
+                _RatioBar(label: '花费占比', fraction: spentFraction, color: color),
+              ],
+            ),
+          ),
+
+          // ── 分组4：花费 ──
+          const Divider(
+            height: 1,
+            thickness: 0.5,
+            indent: 16,
+            endIndent: 16,
+            color: Color(0xFFE5E5EA),
+          ),
+          GestureDetector(
+            onTap: hasBreakdown
+                ? () => setState(() => _feeExpanded = !_feeExpanded)
+                : null,
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+              child: Row(
+                children: [
+                  const Text(
+                    '总花费',
+                    style: TextStyle(fontSize: 11, color: Color(0xFF8E8E93)),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      formatter.formatAmount(spentCents),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  if (hasBreakdown)
+                    AnimatedRotation(
+                      turns: _feeExpanded ? 0.25 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: const Icon(
+                        Icons.chevron_right,
+                        size: 16,
+                        color: Color(0xFF8E8E93),
+                      ),
+                    ),
                 ],
               ),
             ),
-            // 费用明细展开区
-            if (_feeExpanded && hasBreakdown) ...[
-              const SizedBox(height: 8),
-              _FeeBreakdownList(
-                breakdown: stats.feeBreakdown,
-                totalCents: spentCents,
-              ),
-            ],
-            const SizedBox(height: 8),
-            // 占比行
-            Row(
-              children: [
-                Expanded(
-                  child: _StatCell(
-                    icon: Icons.pie_chart_outline,
-                    label: '时间占比',
-                    value: widget.totalDuration > 0 ? '$timePercent%' : '--',
-                  ),
-                ),
-                Expanded(
-                  child: _StatCell(
-                    icon: Icons.pie_chart_outline,
-                    label: '花费占比',
-                    value: widget.totalSpent > 0 ? '$spentPercent%' : '--',
-                  ),
-                ),
-              ],
+          ),
+
+          // 费用明细展开区
+          if (_feeExpanded && hasBreakdown) ...[
+            const Divider(
+              height: 1,
+              thickness: 0.5,
+              indent: 16,
+              endIndent: 16,
+              color: Color(0xFFE5E5EA),
+            ),
+            _FeeBreakdownSection(
+              breakdown: stats.feeBreakdown,
+              totalCents: spentCents,
             ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -467,103 +566,174 @@ class _CourseStatsCardState extends State<_CourseStatsCard> {
   }
 
   String _formatDuration(int totalMinutes) {
-    if (totalMinutes == 0) return '0分钟';
+    if (totalMinutes == 0) return '--';
     if (totalMinutes >= 600) {
       return '${(totalMinutes / 60).toStringAsFixed(1)}小时';
     }
     return '$totalMinutes分钟';
   }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return '--';
+    return '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
+  }
 }
 
-class _StatCell extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Widget? trailing;
+// === 2×2 网格布局 ===
 
-  const _StatCell({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.trailing,
-  });
+class _StatGrid extends StatelessWidget {
+  final List<Widget> children;
+
+  const _StatGrid({required this.children});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+      child: Column(
         children: [
-          Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                Text(
-                  value,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+          for (int i = 0; i < children.length; i += 2)
+            Padding(
+              padding: EdgeInsets.only(top: i > 0 ? 8 : 0),
+              child: Row(
+                children: [
+                  Expanded(child: children[i]),
+                  const SizedBox(width: 16),
+                  if (i + 1 < children.length)
+                    Expanded(child: children[i + 1])
+                  else
+                    const Expanded(child: SizedBox()),
+                ],
+              ),
             ),
-          ),
-          if (trailing != null) trailing!,
         ],
       ),
     );
   }
 }
 
-class _FeeBreakdownList extends StatelessWidget {
-  final List<FeeTypeEntry> breakdown;
-  final int totalCents;
+// === 指标单元格 ===
 
-  const _FeeBreakdownList({required this.breakdown, required this.totalCents});
+class _StatItem extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _StatItem({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: Color(0xFF8E8E93)),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+}
+
+// === 占比进度条 ===
+
+class _RatioBar extends StatelessWidget {
+  final String label;
+  final double fraction;
+  final Color color;
+
+  const _RatioBar({
+    required this.label,
+    required this.fraction,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final percent = fraction > 0
+        ? '${(fraction * 100).toStringAsFixed(2)}%'
+        : '--';
+
+    return Row(
+      children: [
+        SizedBox(
+          width: 56,
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF8E8E93)),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: SizedBox(
+            height: 8,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: Stack(
+                children: [
+                  Container(
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE5E5EA),
+                      borderRadius: BorderRadius.all(Radius.circular(4)),
+                    ),
+                  ),
+                  if (fraction > 0)
+                    FractionallySizedBox(
+                      widthFactor: fraction.clamp(0.0, 1.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          percent,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        ),
+      ],
+    );
+  }
+}
+
+// === 费用明细展开区域（进度条样式） ===
+
+class _FeeBreakdownSection extends StatelessWidget {
+  final List<FeeTypeEntry> breakdown;
+  final int totalCents;
+
+  const _FeeBreakdownSection({
+    required this.breakdown,
+    required this.totalCents,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final formatter = CreditBalanceFormatter();
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(8),
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (int i = 0; i < breakdown.length; i++) ...[
-            if (i > 0)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Divider(
-                  height: 1,
-                  color: theme.colorScheme.outlineVariant.withValues(
-                    alpha: 0.5,
-                  ),
-                ),
-              ),
-            _FeeBreakdownRow(
+            if (i > 0) const SizedBox(height: 10),
+            _FeeBarRow(
               entry: breakdown[i],
               totalCents: totalCents,
               formatter: formatter,
-              color: _breakdownColor(theme, i),
+              color: _breakdownColor(i),
             ),
           ],
         ],
@@ -571,26 +741,26 @@ class _FeeBreakdownList extends StatelessWidget {
     );
   }
 
-  Color _breakdownColor(ThemeData theme, int index) {
-    final colors = [
-      theme.colorScheme.primary,
-      theme.colorScheme.tertiary,
-      theme.colorScheme.secondary,
-      theme.colorScheme.error,
-      theme.colorScheme.primaryContainer,
-      theme.colorScheme.tertiaryContainer,
+  Color _breakdownColor(int index) {
+    const colors = [
+      Color(0xFF2563EB),
+      Color(0xFF10B981),
+      Color(0xFFF59E0B),
+      Color(0xFFEF4444),
+      Color(0xFF8B5CF6),
+      Color(0xFFEC4899),
     ];
     return colors[index % colors.length];
   }
 }
 
-class _FeeBreakdownRow extends StatelessWidget {
+class _FeeBarRow extends StatelessWidget {
   final FeeTypeEntry entry;
   final int totalCents;
   final CreditBalanceFormatter formatter;
   final Color color;
 
-  const _FeeBreakdownRow({
+  const _FeeBarRow({
     required this.entry,
     required this.totalCents,
     required this.formatter,
@@ -599,10 +769,8 @@ class _FeeBreakdownRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final percent = totalCents > 0
-        ? (entry.amountCents / totalCents * 100)
-        : 0.0;
+    final fraction = totalCents > 0 ? entry.amountCents / totalCents : 0.0;
+    final percent = (fraction * 100).toStringAsFixed(1);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -610,37 +778,50 @@ class _FeeBreakdownRow extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            Text(entry.typeName, style: const TextStyle(fontSize: 13)),
             Text(
-              entry.typeName,
-              style: theme.textTheme.bodySmall?.copyWith(
+              '${formatter.formatAmount(entry.amountCents)}  $percent%',
+              style: const TextStyle(
+                fontSize: 12,
                 fontWeight: FontWeight.w500,
-              ),
-            ),
-            Text(
-              '${formatter.formatAmount(entry.amountCents)}  ${percent.toStringAsFixed(1)}%',
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
+                color: Color(0xFF8E8E93),
               ),
             ),
           ],
         ),
         const SizedBox(height: 4),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(2),
-          child: LinearProgressIndicator(
-            value: totalCents > 0 ? entry.amountCents / totalCents : 0,
-            backgroundColor: theme.colorScheme.outlineVariant.withValues(
-              alpha: 0.3,
+        SizedBox(
+          height: 6,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE5E5EA),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                if (fraction > 0)
+                  FractionallySizedBox(
+                    widthFactor: fraction.clamp(0.0, 1.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-            valueColor: AlwaysStoppedAnimation(color),
-            minHeight: 4,
           ),
         ),
       ],
     );
   }
 }
+
+// === 筛选浮动按钮 ===
 
 class _StatisticsFilterFab extends StatelessWidget {
   final StatisticsFilter filter;

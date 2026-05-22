@@ -306,6 +306,11 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.bar_chart),
+            tooltip: '成长统计',
+            onPressed: () => context.push('/statistics'),
+          ),
+          IconButton(
             icon: Icon(
               _calendarView == _CalendarView.week
                   ? Icons.calendar_view_month

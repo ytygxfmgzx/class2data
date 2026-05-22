@@ -17,6 +17,10 @@ class CourseStatistics {
   final int remainingCredits;
   final int purchasedCredits;
   final DateTime? firstClassDate;
+  final DateTime? lastClassDate;
+  final DateTime? firstSpentDate;
+  final DateTime? lastSpentDate;
+  final int learningPeriodDays;
   final List<FeeTypeEntry> feeBreakdown;
 
   const CourseStatistics({
@@ -27,7 +31,26 @@ class CourseStatistics {
     this.remainingCredits = 0,
     this.purchasedCredits = 0,
     this.firstClassDate,
+    this.lastClassDate,
+    this.firstSpentDate,
+    this.lastSpentDate,
+    this.learningPeriodDays = 0,
     this.feeBreakdown = const [],
+  });
+}
+
+/// 孩子总览统计数据（跨课程聚合）
+class ChildOverviewStats {
+  final int totalDurationMinutes;
+  final int totalSpentCents;
+  final DateTime? firstClassDate;
+  final DateTime? firstSpentDate;
+
+  const ChildOverviewStats({
+    this.totalDurationMinutes = 0,
+    this.totalSpentCents = 0,
+    this.firstClassDate,
+    this.firstSpentDate,
   });
 }
 
@@ -70,6 +93,7 @@ class CourseStatisticsService {
     int consumedCredits = 0;
     int purchasedCredits = 0;
     DateTime? firstClassDate;
+    DateTime? lastClassDate;
 
     for (final r in records) {
       if (r.status == 'attended' || r.status == 'makeup') {
@@ -78,9 +102,13 @@ class CourseStatisticsService {
           totalDuration += r.durationMinutes!;
         }
         final d = DateTime.tryParse(r.classDate);
-        if (d != null &&
-            (firstClassDate == null || d.isBefore(firstClassDate))) {
-          firstClassDate = d;
+        if (d != null) {
+          if (firstClassDate == null || d.isBefore(firstClassDate)) {
+            firstClassDate = d;
+          }
+          if (lastClassDate == null || d.isAfter(lastClassDate)) {
+            lastClassDate = d;
+          }
         }
       }
     }
@@ -109,6 +137,33 @@ class CourseStatisticsService {
     }
     final remaining = purchasedCredits - consumedCredits;
 
+    // 计算第一次和最后一次花费日期
+    DateTime? firstSpentDate;
+    DateTime? lastSpentDate;
+    for (final p in packages) {
+      if (!p.isVoided && p.amountCents != null && p.amountCents! > 0) {
+        if (firstSpentDate == null || p.purchaseDate.isBefore(firstSpentDate)) {
+          firstSpentDate = p.purchaseDate;
+        }
+        if (lastSpentDate == null || p.purchaseDate.isAfter(lastSpentDate)) {
+          lastSpentDate = p.purchaseDate;
+        }
+      }
+    }
+    for (final p in payments) {
+      if (firstSpentDate == null || p.paymentDate.isBefore(firstSpentDate)) {
+        firstSpentDate = p.paymentDate;
+      }
+      if (lastSpentDate == null || p.paymentDate.isAfter(lastSpentDate)) {
+        lastSpentDate = p.paymentDate;
+      }
+    }
+
+    // 计算已学总周期天数
+    final learningPeriodDays = firstClassDate != null
+        ? DateTime.now().difference(firstClassDate).inDays
+        : 0;
+
     // 按费用类型分组
     final feeByType = <String, int>{};
     for (final p in payments) {
@@ -135,6 +190,10 @@ class CourseStatisticsService {
       remainingCredits: remaining,
       purchasedCredits: purchasedCredits,
       firstClassDate: firstClassDate,
+      lastClassDate: lastClassDate,
+      firstSpentDate: firstSpentDate,
+      lastSpentDate: lastSpentDate,
+      learningPeriodDays: learningPeriodDays,
       feeBreakdown: feeBreakdown,
     );
   }

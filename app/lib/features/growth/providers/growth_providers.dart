@@ -155,6 +155,41 @@ final childTotalStatisticsProvider =
       );
     });
 
+/// 某孩子的总览统计（跨课程聚合，包含里程碑日期）
+final childOverviewStatsProvider =
+    FutureProvider.family<ChildOverviewStats, int>((ref, childId) async {
+      final statsMap = await ref.watch(
+        childCourseStatisticsProvider(childId).future,
+      );
+
+      int totalDuration = 0;
+      int totalSpent = 0;
+      DateTime? firstClassDate;
+      DateTime? firstSpentDate;
+
+      for (final s in statsMap.values) {
+        totalDuration += s.totalDurationMinutes;
+        totalSpent += s.totalSpentCents;
+        if (s.firstClassDate != null &&
+            (firstClassDate == null ||
+                s.firstClassDate!.isBefore(firstClassDate))) {
+          firstClassDate = s.firstClassDate;
+        }
+        if (s.firstSpentDate != null &&
+            (firstSpentDate == null ||
+                s.firstSpentDate!.isBefore(firstSpentDate))) {
+          firstSpentDate = s.firstSpentDate;
+        }
+      }
+
+      return ChildOverviewStats(
+        totalDurationMinutes: totalDuration,
+        totalSpentCents: totalSpent,
+        firstClassDate: firstClassDate,
+        firstSpentDate: firstSpentDate,
+      );
+    });
+
 /// 某孩子的时间线事件
 final childTimelineProvider = FutureProvider.family<List<TimelineEvent>, int>((
   ref,
