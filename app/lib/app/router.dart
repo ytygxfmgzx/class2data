@@ -33,6 +33,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -497,6 +498,16 @@ class _SettingsPageState extends ConsumerState<_SettingsPage> {
           _SettingsGroup(
             title: '关于',
             children: [
+              _SettingsRow(
+                icon: Icons.menu_book_outlined,
+                title: '小技巧',
+                onTap: () async {
+                  final uri = Uri.parse(
+                    'https://mp.weixin.qq.com/mp/appmsgalbum?__biz=MzUzMTY5OTQzMQ==&action=getalbum&album_id=4527638314866393092#wechat_redirect',
+                  );
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                },
+              ),
               _SettingsRow(
                 icon: Icons.local_cafe_outlined,
                 title: '请开发者喝茶',

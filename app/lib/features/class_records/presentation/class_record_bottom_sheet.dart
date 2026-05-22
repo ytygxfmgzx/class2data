@@ -136,6 +136,20 @@ class _ClassRecordBottomSheetState
       Err() => <Package>[],
     };
 
+    // 查询每个课包的余额
+    final creditRepo = ref.read(creditTransactionRepositoryProvider);
+    final packageBalances = <int, int>{};
+    for (final p in packages) {
+      if (p.totalCredits != null) {
+        final txResult = await creditRepo.getByPackageId(p.id);
+        final txs = switch (txResult) {
+          Ok(:final value) => value,
+          Err() => <CreditTransaction>[],
+        };
+        packageBalances[p.id] = CreditBalanceService().packageBalance(txs);
+      }
+    }
+
     // 默认值
     final defaults = DefaultValueService().getDefaults(
       historyRecords: records,
@@ -148,6 +162,7 @@ class _ClassRecordBottomSheetState
       packages: packages,
       classRecords: records,
       classDate: widget.occurrence.date,
+      packageBalances: packageBalances,
     );
 
     if (mounted) {

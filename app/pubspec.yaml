@@ -1,7 +1,7 @@
 name: class2data
 description: "课小记 — 家庭课外班账本和成长档案"
 publish_to: 'none'
-version: 0.4.0+1
+version: 0.5.0+1
 
 environment:
   sdk: ^3.11.3
@@ -46,6 +46,9 @@ dependencies:
   device_info_plus: ^12.4.0
   http: ^1.6.0
   shared_preferences: ^2.5.5
+
+  # 外部链接
+  url_launcher: ^6.3.1
 
   # WebDAV 云端备份
   xml: ^6.5.0

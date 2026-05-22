@@ -9,10 +9,13 @@ class PackageSelectionService {
   /// [packages] — 当前课程下所有未作废的课包
   /// [classRecords] — 同课程历史上课记录（用于排序偏好）
   /// [classDate] — 上课日期（YYYY-MM-DD），用于排除生效日期晚的课包
+  /// [packageBalances] — 课包余额（packageId → 余额，单位：credit_units，整数），
+  ///   用于排除已用完的课包；为 null 时不做余额过滤
   int? recommendPackage({
     required List<Package> packages,
     required List<ClassRecord> classRecords,
     required String classDate,
+    Map<int, int>? packageBalances,
   }) {
     // 候选过滤：仅保留在该上课日期有效的课包
     final candidates = packages.where((p) {
@@ -32,14 +35,21 @@ class PackageSelectionService {
       if (p.totalCredits == null) {
         // 周期卡/不限次，视为可用
         available.add(p);
+      } else if (packageBalances != null) {
+        final balance = packageBalances[p.id];
+        if (balance != null && balance <= 0) {
+          usedUp.add(p);
+        } else {
+          available.add(p);
+        }
       } else {
         available.add(p);
-        // 实际余额需要流水数据，此处简化：不在此层排除
       }
     }
 
     if (available.isEmpty && usedUp.isEmpty) return null;
-    final pool = available.isNotEmpty ? available : usedUp;
+    final fromUsedUp = available.isEmpty;
+    final pool = fromUsedUp ? usedUp : available;
 
     // 排序规则
     // 1. 最近一次同课程使用过的课包优先
@@ -57,7 +67,11 @@ class PackageSelectionService {
       if (aIdx != -1 && bIdx != -1) return aIdx.compareTo(bIdx);
       if (aIdx != -1) return -1;
       if (bIdx != -1) return 1;
-      // 更早购买的优先
+      if (fromUsedUp) {
+        // 已用完池：更晚购买的优先（用户更可能续费/记录到最新课包）
+        return b.purchaseDate.compareTo(a.purchaseDate);
+      }
+      // 可用池：更早购买的优先
       return a.purchaseDate.compareTo(b.purchaseDate);
     });
 

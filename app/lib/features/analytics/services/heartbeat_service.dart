@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -71,14 +72,20 @@ class HeartbeatService {
     return uuid;
   }
 
+  static const _platformChannel = MethodChannel(
+    'com.class2data.class2data/backup_storage',
+  );
+
   Future<String?> _getPlatformDeviceId() async {
     try {
-      final info = await DeviceInfoPlugin().deviceInfo;
-      return switch (info) {
-        AndroidDeviceInfo(:final id) => id,
-        IosDeviceInfo(:final identifierForVendor) => identifierForVendor,
-        _ => null,
-      };
+      if (Platform.isAndroid) {
+        return await _platformChannel.invokeMethod<String>('getAndroidId');
+      }
+      if (Platform.isIOS) {
+        final info = await DeviceInfoPlugin().deviceInfo;
+        return (info as IosDeviceInfo).identifierForVendor;
+      }
+      return null;
     } catch (_) {
       return null;
     }

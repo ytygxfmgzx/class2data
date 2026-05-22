@@ -7,6 +7,7 @@ import 'package:class2data/features/growth/providers/growth_providers.dart';
 import 'package:class2data/shared/widgets/child_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 /// 课程色板，卡片头部色块和占比进度条共用
 const _kCourseColors = [
@@ -331,205 +332,86 @@ class _CourseStatsCardState extends State<_CourseStatsCard> {
     final hasBreakdown =
         stats != null && stats.feeBreakdown.isNotEmpty && spentCents > 0;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── 标题行：色块+课程名+机构 | 剩余课程 badge ──
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 左侧：色块 + 课程信息
-                Container(
-                  margin: const EdgeInsets.only(top: 5),
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: color,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.course.name,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      if (widget.course.institutionName != null &&
-                          widget.course.institutionName!.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text(
-                            widget.course.institutionName!,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF8E8E93),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                // 右侧：剩余课程 badge
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF2F2F7),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    '剩余${formatter.formatCredits(stats?.remainingCredits ?? 0)}节',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF8E8E93),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // ── 分组1：日期（2×2）──
-          const Divider(
-            height: 1,
-            thickness: 0.5,
-            indent: 16,
-            endIndent: 16,
-            color: Color(0xFFE5E5EA),
-          ),
-          _StatGrid(
-            children: [
-              _StatItem(
-                label: '第一次上课',
-                value: _formatDate(stats?.firstClassDate),
-              ),
-              _StatItem(
-                label: '上一次上课',
-                value: _formatDate(stats?.lastClassDate),
-              ),
-              _StatItem(
-                label: '第一次花费',
-                value: _formatDate(stats?.firstSpentDate),
-              ),
-              _StatItem(
-                label: '上一次花费',
-                value: _formatDate(stats?.lastSpentDate),
-              ),
-            ],
-          ),
-
-          // ── 分组2：时间（2×2）──
-          const Divider(
-            height: 1,
-            thickness: 0.5,
-            indent: 16,
-            endIndent: 16,
-            color: Color(0xFFE5E5EA),
-          ),
-          _StatGrid(
-            children: [
-              _StatItem(
-                label: '已学总时长',
-                value: _formatPeriod(stats?.firstClassDate),
-              ),
-              _StatItem(
-                label: '上课总时长',
-                value: _formatDuration(durationMinutes),
-              ),
-              _StatItem(label: '已上课节数', value: '${stats?.classCount ?? 0}节'),
-              _StatItem(
-                label: '总购买节数',
-                value:
-                    '${formatter.formatCredits(stats?.purchasedCredits ?? 0)}节',
-              ),
-            ],
-          ),
-
-          // ── 分组3：占比（进度条）──
-          const Divider(
-            height: 1,
-            thickness: 0.5,
-            indent: 16,
-            endIndent: 16,
-            color: Color(0xFFE5E5EA),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-            child: Column(
-              children: [
-                _RatioBar(label: '时间占比', fraction: timeFraction, color: color),
-                const SizedBox(height: 10),
-                _RatioBar(label: '花费占比', fraction: spentFraction, color: color),
-              ],
-            ),
-          ),
-
-          // ── 分组4：花费 ──
-          const Divider(
-            height: 1,
-            thickness: 0.5,
-            indent: 16,
-            endIndent: 16,
-            color: Color(0xFFE5E5EA),
-          ),
-          GestureDetector(
-            onTap: hasBreakdown
-                ? () => setState(() => _feeExpanded = !_feeExpanded)
-                : null,
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+    return InkWell(
+      onTap: () => context.push('/courses/${widget.course.id}'),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── 标题行：色块+课程名+机构 | 剩余课程 badge ──
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '总花费',
-                    style: TextStyle(fontSize: 11, color: Color(0xFF8E8E93)),
+                  // 左侧：色块 + 课程信息
+                  Container(
+                    margin: const EdgeInsets.only(top: 5),
+                    child: Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
-                      formatter.formatAmount(spentCents),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.course.name,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (widget.course.institutionName != null &&
+                            widget.course.institutionName!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(
+                              widget.course.institutionName!,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF8E8E93),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                  if (hasBreakdown)
-                    AnimatedRotation(
-                      turns: _feeExpanded ? 0.25 : 0,
-                      duration: const Duration(milliseconds: 200),
-                      child: const Icon(
-                        Icons.chevron_right,
-                        size: 16,
+                  // 右侧：剩余课程 badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF2F2F7),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '剩余${formatter.formatCredits(stats?.remainingCredits ?? 0)}节',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
                         color: Color(0xFF8E8E93),
                       ),
                     ),
+                  ),
                 ],
               ),
             ),
-          ),
 
-          // 费用明细展开区
-          if (_feeExpanded && hasBreakdown) ...[
+            // ── 分组1：日期（2×2）──
             const Divider(
               height: 1,
               thickness: 0.5,
@@ -537,12 +419,143 @@ class _CourseStatsCardState extends State<_CourseStatsCard> {
               endIndent: 16,
               color: Color(0xFFE5E5EA),
             ),
-            _FeeBreakdownSection(
-              breakdown: stats.feeBreakdown,
-              totalCents: spentCents,
+            _StatGrid(
+              children: [
+                _StatItem(
+                  label: '第一次上课',
+                  value: _formatDate(stats?.firstClassDate),
+                ),
+                _StatItem(
+                  label: '上一次上课',
+                  value: _formatDate(stats?.lastClassDate),
+                ),
+                _StatItem(
+                  label: '第一次花费',
+                  value: _formatDate(stats?.firstSpentDate),
+                ),
+                _StatItem(
+                  label: '上一次花费',
+                  value: _formatDate(stats?.lastSpentDate),
+                ),
+              ],
             ),
+
+            // ── 分组2：时间（2×2）──
+            const Divider(
+              height: 1,
+              thickness: 0.5,
+              indent: 16,
+              endIndent: 16,
+              color: Color(0xFFE5E5EA),
+            ),
+            _StatGrid(
+              children: [
+                _StatItem(
+                  label: '已学总时长',
+                  value: _formatPeriod(stats?.firstClassDate),
+                ),
+                _StatItem(
+                  label: '上课总时长',
+                  value: _formatDuration(durationMinutes),
+                ),
+                _StatItem(label: '已上课节数', value: '${stats?.classCount ?? 0}节'),
+                _StatItem(
+                  label: '总购买节数',
+                  value:
+                      '${formatter.formatCredits(stats?.purchasedCredits ?? 0)}节',
+                ),
+              ],
+            ),
+
+            // ── 分组3：占比（进度条）──
+            const Divider(
+              height: 1,
+              thickness: 0.5,
+              indent: 16,
+              endIndent: 16,
+              color: Color(0xFFE5E5EA),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+              child: Column(
+                children: [
+                  _RatioBar(
+                    label: '时间占比',
+                    fraction: timeFraction,
+                    color: color,
+                  ),
+                  const SizedBox(height: 10),
+                  _RatioBar(
+                    label: '花费占比',
+                    fraction: spentFraction,
+                    color: color,
+                  ),
+                ],
+              ),
+            ),
+
+            // ── 分组4：花费 ──
+            const Divider(
+              height: 1,
+              thickness: 0.5,
+              indent: 16,
+              endIndent: 16,
+              color: Color(0xFFE5E5EA),
+            ),
+            GestureDetector(
+              onTap: hasBreakdown
+                  ? () => setState(() => _feeExpanded = !_feeExpanded)
+                  : null,
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+                child: Row(
+                  children: [
+                    const Text(
+                      '总花费',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF8E8E93)),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        formatter.formatAmount(spentCents),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (hasBreakdown)
+                      AnimatedRotation(
+                        turns: _feeExpanded ? 0.25 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: const Icon(
+                          Icons.chevron_right,
+                          size: 16,
+                          color: Color(0xFF8E8E93),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+
+            // 费用明细展开区
+            if (_feeExpanded && hasBreakdown) ...[
+              const Divider(
+                height: 1,
+                thickness: 0.5,
+                indent: 16,
+                endIndent: 16,
+                color: Color(0xFFE5E5EA),
+              ),
+              _FeeBreakdownSection(
+                breakdown: stats.feeBreakdown,
+                totalCents: spentCents,
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

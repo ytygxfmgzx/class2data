@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.provider.Settings
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
@@ -35,6 +36,9 @@ class MainActivity : FlutterActivity() {
                     "openInFileManager" -> {
                         val dirPath = call.argument<String>("dirPath")!!
                         openInFileManager(dirPath, result)
+                    }
+                    "getAndroidId" -> {
+                        result.success(Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID))
                     }
                     else -> result.notImplemented()
                 }
