@@ -82,4 +82,4 @@ dart run build_runner build --delete-conflicting-outputs  # 涉及 Drift/Riverpo
 
 ## 许可
 
-私有项目，未开源。
+[MIT License](LICENSE)
