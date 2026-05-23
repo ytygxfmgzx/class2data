@@ -6,7 +6,10 @@ import 'package:class2data/data/database/app_database.dart';
 import 'package:class2data/domain/repositories/feedback_repository.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:drift/drift.dart' show Value;
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 class FeedbackService {
   static const String _endpoint = String.fromEnvironment(
@@ -39,6 +42,7 @@ class FeedbackService {
         appVersion: metadata.appVersion,
         platform: metadata.platform,
         deviceInfo: metadata.deviceInfo,
+        deviceId: Value(metadata.deviceId),
         submittedAt: now,
         createdAt: now,
         updatedAt: now,
@@ -173,6 +177,7 @@ class FeedbackService {
               _field('版本', entry.appVersion),
               _field('平台', entry.platform),
               _field('设备', entry.deviceInfo),
+              if (entry.deviceId != null) _field('设备 ID', entry.deviceId!),
               _field('时间', _formatDateTime(entry.submittedAt)),
             ],
           },
@@ -200,6 +205,7 @@ class FeedbackService {
       appVersion: appVersion,
       platform: Platform.operatingSystem,
       deviceInfo: await _loadDeviceInfo(),
+      deviceId: await _getDeviceId(),
     );
   }
 
@@ -233,6 +239,43 @@ class FeedbackService {
     }
   }
 
+  static const String _deviceIdKey = 'analytics_device_id';
+
+  static const _platformChannel = MethodChannel(
+    'com.class2data.class2data/backup_storage',
+  );
+
+  Future<String?> _getDeviceId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cached = prefs.getString(_deviceIdKey);
+    if (cached != null) return cached;
+
+    final platformId = await _getPlatformDeviceId();
+    if (platformId != null && platformId.isNotEmpty) {
+      await prefs.setString(_deviceIdKey, platformId);
+      return platformId;
+    }
+
+    final uuid = const Uuid().v4();
+    await prefs.setString(_deviceIdKey, uuid);
+    return uuid;
+  }
+
+  Future<String?> _getPlatformDeviceId() async {
+    try {
+      if (Platform.isAndroid) {
+        return await _platformChannel.invokeMethod<String>('getAndroidId');
+      }
+      if (Platform.isIOS) {
+        final info = await DeviceInfoPlugin().deviceInfo;
+        return (info as IosDeviceInfo).identifierForVendor;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   String? _blankToNull(String? value) {
     final trimmed = value?.trim();
     if (trimmed == null || trimmed.isEmpty) return null;
@@ -259,11 +302,13 @@ class _FeedbackMetadata {
   final String appVersion;
   final String platform;
   final String deviceInfo;
+  final String? deviceId;
 
   const _FeedbackMetadata({
     required this.appName,
     required this.appVersion,
     required this.platform,
     required this.deviceInfo,
+    this.deviceId,
   });
 }

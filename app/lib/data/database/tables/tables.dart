@@ -236,6 +236,7 @@ class FeedbackEntries extends Table {
   TextColumn get appVersion => text()();
   TextColumn get platform => text()();
   TextColumn get deviceInfo => text()();
+  TextColumn get deviceId => text().nullable()();
   DateTimeColumn get submittedAt => dateTime()();
   DateTimeColumn get sentAt => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime()();

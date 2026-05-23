@@ -399,7 +399,7 @@ class _CourseStatsCardState extends State<_CourseStatsCard> {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      '剩余${formatter.formatCredits(stats?.remainingCredits ?? 0)}节',
+                      '剩余${formatter.formatCredits(stats?.remainingCredits ?? 0)}课时',
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -458,11 +458,15 @@ class _CourseStatsCardState extends State<_CourseStatsCard> {
                   label: '上课总时长',
                   value: _formatDuration(durationMinutes),
                 ),
-                _StatItem(label: '已上课节数', value: '${stats?.classCount ?? 0}节'),
                 _StatItem(
-                  label: '总购买节数',
+                  label: '已消耗课时',
                   value:
-                      '${formatter.formatCredits(stats?.purchasedCredits ?? 0)}节',
+                      '${formatter.formatCredits(stats?.consumedCredits ?? 0)}课时',
+                ),
+                _StatItem(
+                  label: '总购买课时',
+                  value:
+                      '${formatter.formatCredits(stats?.purchasedCredits ?? 0)}课时',
                 ),
               ],
             ),

@@ -156,8 +156,7 @@ class GrowthPage extends ConsumerWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('选择孩子',
-                    style: Theme.of(ctx).textTheme.titleLarge),
+                child: Text('选择孩子', style: Theme.of(ctx).textTheme.titleLarge),
               ),
               ...children.map(
                 (c) => ListTile(

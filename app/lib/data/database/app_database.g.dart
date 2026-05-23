@@ -8525,6 +8525,17 @@ class $FeedbackEntriesTable extends FeedbackEntries
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _submittedAtMeta = const VerificationMeta(
     'submittedAt',
   );
@@ -8578,6 +8589,7 @@ class $FeedbackEntriesTable extends FeedbackEntries
     appVersion,
     platform,
     deviceInfo,
+    deviceId,
     submittedAt,
     sentAt,
     createdAt,
@@ -8661,6 +8673,12 @@ class $FeedbackEntriesTable extends FeedbackEntries
     } else if (isInserting) {
       context.missing(_deviceInfoMeta);
     }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    }
     if (data.containsKey('submitted_at')) {
       context.handle(
         _submittedAtMeta,
@@ -8739,6 +8757,10 @@ class $FeedbackEntriesTable extends FeedbackEntries
         DriftSqlType.string,
         data['${effectivePrefix}device_info'],
       )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      ),
       submittedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}submitted_at'],
@@ -8774,6 +8796,7 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
   final String appVersion;
   final String platform;
   final String deviceInfo;
+  final String? deviceId;
   final DateTime submittedAt;
   final DateTime? sentAt;
   final DateTime createdAt;
@@ -8788,6 +8811,7 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
     required this.appVersion,
     required this.platform,
     required this.deviceInfo,
+    this.deviceId,
     required this.submittedAt,
     this.sentAt,
     required this.createdAt,
@@ -8809,6 +8833,9 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
     map['app_version'] = Variable<String>(appVersion);
     map['platform'] = Variable<String>(platform);
     map['device_info'] = Variable<String>(deviceInfo);
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
     map['submitted_at'] = Variable<DateTime>(submittedAt);
     if (!nullToAbsent || sentAt != null) {
       map['sent_at'] = Variable<DateTime>(sentAt);
@@ -8833,6 +8860,9 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
       appVersion: Value(appVersion),
       platform: Value(platform),
       deviceInfo: Value(deviceInfo),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
       submittedAt: Value(submittedAt),
       sentAt: sentAt == null && nullToAbsent
           ? const Value.absent()
@@ -8857,6 +8887,7 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
       appVersion: serializer.fromJson<String>(json['appVersion']),
       platform: serializer.fromJson<String>(json['platform']),
       deviceInfo: serializer.fromJson<String>(json['deviceInfo']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
       submittedAt: serializer.fromJson<DateTime>(json['submittedAt']),
       sentAt: serializer.fromJson<DateTime?>(json['sentAt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -8876,6 +8907,7 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
       'appVersion': serializer.toJson<String>(appVersion),
       'platform': serializer.toJson<String>(platform),
       'deviceInfo': serializer.toJson<String>(deviceInfo),
+      'deviceId': serializer.toJson<String?>(deviceId),
       'submittedAt': serializer.toJson<DateTime>(submittedAt),
       'sentAt': serializer.toJson<DateTime?>(sentAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -8893,6 +8925,7 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
     String? appVersion,
     String? platform,
     String? deviceInfo,
+    Value<String?> deviceId = const Value.absent(),
     DateTime? submittedAt,
     Value<DateTime?> sentAt = const Value.absent(),
     DateTime? createdAt,
@@ -8907,6 +8940,7 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
     appVersion: appVersion ?? this.appVersion,
     platform: platform ?? this.platform,
     deviceInfo: deviceInfo ?? this.deviceInfo,
+    deviceId: deviceId.present ? deviceId.value : this.deviceId,
     submittedAt: submittedAt ?? this.submittedAt,
     sentAt: sentAt.present ? sentAt.value : this.sentAt,
     createdAt: createdAt ?? this.createdAt,
@@ -8929,6 +8963,7 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
       deviceInfo: data.deviceInfo.present
           ? data.deviceInfo.value
           : this.deviceInfo,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
       submittedAt: data.submittedAt.present
           ? data.submittedAt.value
           : this.submittedAt,
@@ -8950,6 +8985,7 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
           ..write('appVersion: $appVersion, ')
           ..write('platform: $platform, ')
           ..write('deviceInfo: $deviceInfo, ')
+          ..write('deviceId: $deviceId, ')
           ..write('submittedAt: $submittedAt, ')
           ..write('sentAt: $sentAt, ')
           ..write('createdAt: $createdAt, ')
@@ -8969,6 +9005,7 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
     appVersion,
     platform,
     deviceInfo,
+    deviceId,
     submittedAt,
     sentAt,
     createdAt,
@@ -8987,6 +9024,7 @@ class FeedbackEntry extends DataClass implements Insertable<FeedbackEntry> {
           other.appVersion == this.appVersion &&
           other.platform == this.platform &&
           other.deviceInfo == this.deviceInfo &&
+          other.deviceId == this.deviceId &&
           other.submittedAt == this.submittedAt &&
           other.sentAt == this.sentAt &&
           other.createdAt == this.createdAt &&
@@ -9003,6 +9041,7 @@ class FeedbackEntriesCompanion extends UpdateCompanion<FeedbackEntry> {
   final Value<String> appVersion;
   final Value<String> platform;
   final Value<String> deviceInfo;
+  final Value<String?> deviceId;
   final Value<DateTime> submittedAt;
   final Value<DateTime?> sentAt;
   final Value<DateTime> createdAt;
@@ -9017,6 +9056,7 @@ class FeedbackEntriesCompanion extends UpdateCompanion<FeedbackEntry> {
     this.appVersion = const Value.absent(),
     this.platform = const Value.absent(),
     this.deviceInfo = const Value.absent(),
+    this.deviceId = const Value.absent(),
     this.submittedAt = const Value.absent(),
     this.sentAt = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -9032,6 +9072,7 @@ class FeedbackEntriesCompanion extends UpdateCompanion<FeedbackEntry> {
     required String appVersion,
     required String platform,
     required String deviceInfo,
+    this.deviceId = const Value.absent(),
     required DateTime submittedAt,
     this.sentAt = const Value.absent(),
     required DateTime createdAt,
@@ -9055,6 +9096,7 @@ class FeedbackEntriesCompanion extends UpdateCompanion<FeedbackEntry> {
     Expression<String>? appVersion,
     Expression<String>? platform,
     Expression<String>? deviceInfo,
+    Expression<String>? deviceId,
     Expression<DateTime>? submittedAt,
     Expression<DateTime>? sentAt,
     Expression<DateTime>? createdAt,
@@ -9070,6 +9112,7 @@ class FeedbackEntriesCompanion extends UpdateCompanion<FeedbackEntry> {
       if (appVersion != null) 'app_version': appVersion,
       if (platform != null) 'platform': platform,
       if (deviceInfo != null) 'device_info': deviceInfo,
+      if (deviceId != null) 'device_id': deviceId,
       if (submittedAt != null) 'submitted_at': submittedAt,
       if (sentAt != null) 'sent_at': sentAt,
       if (createdAt != null) 'created_at': createdAt,
@@ -9087,6 +9130,7 @@ class FeedbackEntriesCompanion extends UpdateCompanion<FeedbackEntry> {
     Value<String>? appVersion,
     Value<String>? platform,
     Value<String>? deviceInfo,
+    Value<String?>? deviceId,
     Value<DateTime>? submittedAt,
     Value<DateTime?>? sentAt,
     Value<DateTime>? createdAt,
@@ -9102,6 +9146,7 @@ class FeedbackEntriesCompanion extends UpdateCompanion<FeedbackEntry> {
       appVersion: appVersion ?? this.appVersion,
       platform: platform ?? this.platform,
       deviceInfo: deviceInfo ?? this.deviceInfo,
+      deviceId: deviceId ?? this.deviceId,
       submittedAt: submittedAt ?? this.submittedAt,
       sentAt: sentAt ?? this.sentAt,
       createdAt: createdAt ?? this.createdAt,
@@ -9139,6 +9184,9 @@ class FeedbackEntriesCompanion extends UpdateCompanion<FeedbackEntry> {
     if (deviceInfo.present) {
       map['device_info'] = Variable<String>(deviceInfo.value);
     }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
     if (submittedAt.present) {
       map['submitted_at'] = Variable<DateTime>(submittedAt.value);
     }
@@ -9166,6 +9214,7 @@ class FeedbackEntriesCompanion extends UpdateCompanion<FeedbackEntry> {
           ..write('appVersion: $appVersion, ')
           ..write('platform: $platform, ')
           ..write('deviceInfo: $deviceInfo, ')
+          ..write('deviceId: $deviceId, ')
           ..write('submittedAt: $submittedAt, ')
           ..write('sentAt: $sentAt, ')
           ..write('createdAt: $createdAt, ')
@@ -16458,6 +16507,7 @@ typedef $$FeedbackEntriesTableCreateCompanionBuilder =
       required String appVersion,
       required String platform,
       required String deviceInfo,
+      Value<String?> deviceId,
       required DateTime submittedAt,
       Value<DateTime?> sentAt,
       required DateTime createdAt,
@@ -16474,6 +16524,7 @@ typedef $$FeedbackEntriesTableUpdateCompanionBuilder =
       Value<String> appVersion,
       Value<String> platform,
       Value<String> deviceInfo,
+      Value<String?> deviceId,
       Value<DateTime> submittedAt,
       Value<DateTime?> sentAt,
       Value<DateTime> createdAt,
@@ -16531,6 +16582,11 @@ class $$FeedbackEntriesTableFilterComposer
 
   ColumnFilters<String> get deviceInfo => $composableBuilder(
     column: $table.deviceInfo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -16609,6 +16665,11 @@ class $$FeedbackEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get submittedAt => $composableBuilder(
     column: $table.submittedAt,
     builder: (column) => ColumnOrderings(column),
@@ -16672,6 +16733,9 @@ class $$FeedbackEntriesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
   GeneratedColumn<DateTime> get submittedAt => $composableBuilder(
     column: $table.submittedAt,
     builder: (column) => column,
@@ -16729,6 +16793,7 @@ class $$FeedbackEntriesTableTableManager
                 Value<String> appVersion = const Value.absent(),
                 Value<String> platform = const Value.absent(),
                 Value<String> deviceInfo = const Value.absent(),
+                Value<String?> deviceId = const Value.absent(),
                 Value<DateTime> submittedAt = const Value.absent(),
                 Value<DateTime?> sentAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -16743,6 +16808,7 @@ class $$FeedbackEntriesTableTableManager
                 appVersion: appVersion,
                 platform: platform,
                 deviceInfo: deviceInfo,
+                deviceId: deviceId,
                 submittedAt: submittedAt,
                 sentAt: sentAt,
                 createdAt: createdAt,
@@ -16759,6 +16825,7 @@ class $$FeedbackEntriesTableTableManager
                 required String appVersion,
                 required String platform,
                 required String deviceInfo,
+                Value<String?> deviceId = const Value.absent(),
                 required DateTime submittedAt,
                 Value<DateTime?> sentAt = const Value.absent(),
                 required DateTime createdAt,
@@ -16773,6 +16840,7 @@ class $$FeedbackEntriesTableTableManager
                 appVersion: appVersion,
                 platform: platform,
                 deviceInfo: deviceInfo,
+                deviceId: deviceId,
                 submittedAt: submittedAt,
                 sentAt: sentAt,
                 createdAt: createdAt,
