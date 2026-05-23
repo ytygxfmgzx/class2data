@@ -29,6 +29,8 @@ import 'package:class2data/features/growth/presentation/growth_statistics_page.d
 import 'package:class2data/features/growth/presentation/photo_wall_page.dart';
 import 'package:class2data/features/home/presentation/home_page.dart';
 import 'package:class2data/features/packages/presentation/package_form_page.dart';
+import 'package:class2data/features/update/providers/update_provider.dart';
+import 'package:class2data/features/update/services/update_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -518,21 +520,34 @@ class _SettingsPageState extends ConsumerState<_SettingsPage> {
                 title: '意见反馈',
                 onTap: () => context.push('/feedback'),
               ),
-              FutureBuilder<PackageInfo>(
-                future: PackageInfo.fromPlatform(),
-                builder: (context, snapshot) {
-                  final version = snapshot.hasData
-                      ? 'v${snapshot.data!.version}'
-                      : '';
-                  return _SettingsRow(
-                    icon: Icons.info,
-                    title: '版本',
-                    value: version,
-                    onTap: () {},
-                  );
-                },
-              ),
+              _VersionRow(onUpdateAvailable: _showUpdateDialog),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showUpdateDialog(UpdateInfo info) async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('发现新版本 v${info.version}'),
+        content: SingleChildScrollView(
+          child: Text(info.releaseNotes.isEmpty ? '暂无更新说明' : info.releaseNotes),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('稍后再说'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              final uri = Uri.parse(info.downloadUrl);
+              launchUrl(uri, mode: LaunchMode.externalApplication);
+            },
+            child: const Text('去下载'),
           ),
         ],
       ),
@@ -574,12 +589,14 @@ class _SettingsRow extends StatelessWidget {
   final IconData icon;
   final String title;
   final String? value;
+  final Color? valueColor;
   final VoidCallback onTap;
 
   const _SettingsRow({
     required this.icon,
     required this.title,
     this.value,
+    this.valueColor,
     required this.onTap,
   });
 
@@ -608,7 +625,7 @@ class _SettingsRow extends StatelessWidget {
               Text(
                 value!,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: valueColor ?? theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             if (value == null)
@@ -620,6 +637,68 @@ class _SettingsRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _VersionRow extends ConsumerStatefulWidget {
+  final void Function(UpdateInfo) onUpdateAvailable;
+
+  const _VersionRow({required this.onUpdateAvailable});
+
+  @override
+  ConsumerState<_VersionRow> createState() => _VersionRowState();
+}
+
+class _VersionRowState extends ConsumerState<_VersionRow> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.invalidate(updateProvider);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final updateAsync = ref.watch(updateProvider);
+
+    return FutureBuilder<PackageInfo>(
+      future: PackageInfo.fromPlatform(),
+      builder: (context, snapshot) {
+        final currentVersion = snapshot.hasData
+            ? 'v${snapshot.data!.version}'
+            : '';
+
+        final hasUpdate = updateAsync.valueOrNull != null;
+
+        return _SettingsRow(
+          icon: Icons.info,
+          title: '版本',
+          value: updateAsync.when(
+            data: (info) {
+              if (info != null) {
+                return '发现新版本 v${info.version}';
+              }
+              return currentVersion;
+            },
+            loading: () => currentVersion,
+            error: (_, _) => currentVersion,
+          ),
+          valueColor: hasUpdate ? theme.colorScheme.error : null,
+          onTap: () {
+            final info = updateAsync.valueOrNull;
+            if (info != null) {
+              widget.onUpdateAvailable(info);
+            } else {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('当前已是最新版本')));
+            }
+          },
+        );
+      },
     );
   }
 }
