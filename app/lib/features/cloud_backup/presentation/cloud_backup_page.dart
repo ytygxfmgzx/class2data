@@ -268,22 +268,39 @@ class _StatusCard extends StatelessWidget {
               if (state.filesToDownload > 0)
                 _StatusRow(
                   icon: Icons.cloud_download_outlined,
-                  label: '云端有新数据',
+                  label: '云端有新文件',
                   value: '${state.filesToDownload} 个文件',
                   valueColor: theme.colorScheme.primary,
                 ),
               if (state.filesToUpload > 0)
                 _StatusRow(
                   icon: Icons.cloud_upload_outlined,
-                  label: '本地有新数据',
+                  label: '本地有新文件',
                   value: '${state.filesToUpload} 个文件',
                   valueColor: theme.colorScheme.tertiary,
                 ),
-              if (state.filesToDownload == 0 && state.filesToUpload == 0)
+              if (state.dbRemoteNewer)
+                _StatusRow(
+                  icon: Icons.cloud_download_outlined,
+                  label: '数据库有变化',
+                  value: '云端数据库有更新',
+                  valueColor: theme.colorScheme.primary,
+                ),
+              if (state.dbLocalNewer)
+                _StatusRow(
+                  icon: Icons.cloud_upload_outlined,
+                  label: '数据库有变化',
+                  value: '本地数据库有更新',
+                  valueColor: theme.colorScheme.tertiary,
+                ),
+              if (state.filesToDownload == 0 &&
+                  state.filesToUpload == 0 &&
+                  !state.dbRemoteNewer &&
+                  !state.dbLocalNewer)
                 const _StatusRow(
                   icon: Icons.cloud_done,
                   label: '同步状态',
-                  value: '本地与云端文件已一致',
+                  value: '本地与云端已一致',
                 ),
             ] else if (state.status == CloudBackupStatus.idle)
               const _StatusRow(

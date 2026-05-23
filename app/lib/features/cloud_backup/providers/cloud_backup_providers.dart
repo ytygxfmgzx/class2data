@@ -38,6 +38,8 @@ class CloudBackupState {
   final DateTime? lastSyncTime;
   final int filesToDownload;
   final int filesToUpload;
+  final bool dbRemoteNewer;
+  final bool dbLocalNewer;
 
   const CloudBackupState({
     this.status = CloudBackupStatus.idle,
@@ -48,6 +50,8 @@ class CloudBackupState {
     this.lastSyncTime,
     this.filesToDownload = 0,
     this.filesToUpload = 0,
+    this.dbRemoteNewer = false,
+    this.dbLocalNewer = false,
   });
 
   CloudBackupState copyWith({
@@ -61,6 +65,8 @@ class CloudBackupState {
     DateTime? lastSyncTime,
     int? filesToDownload,
     int? filesToUpload,
+    bool? dbRemoteNewer,
+    bool? dbLocalNewer,
   }) => CloudBackupState(
     status: status ?? this.status,
     progress: clearProgress ? null : (progress ?? this.progress),
@@ -72,6 +78,8 @@ class CloudBackupState {
     lastSyncTime: lastSyncTime ?? this.lastSyncTime,
     filesToDownload: filesToDownload ?? this.filesToDownload,
     filesToUpload: filesToUpload ?? this.filesToUpload,
+    dbRemoteNewer: dbRemoteNewer ?? this.dbRemoteNewer,
+    dbLocalNewer: dbLocalNewer ?? this.dbLocalNewer,
   );
 }
 
@@ -106,10 +114,18 @@ class CloudBackupNotifier extends StateNotifier<CloudBackupState> {
       // 计算本地与云端的文件差异
       int filesToDownload = 0;
       int filesToUpload = 0;
+      bool dbRemoteNewer = false;
+      bool dbLocalNewer = false;
       if (manifest != null) {
-        final diff = await _service.computeSyncDiff(manifest);
+        final config = _ref.read(webDavConfigProvider);
+        final diff = await _service.computeSyncDiff(
+          manifest,
+          localLastSyncTime: config.lastSyncTime,
+        );
         filesToDownload = diff.toDownload;
         filesToUpload = diff.toUpload;
+        dbRemoteNewer = diff.dbRemoteNewer;
+        dbLocalNewer = diff.dbLocalNewer;
       }
 
       state = CloudBackupState(
@@ -121,6 +137,8 @@ class CloudBackupNotifier extends StateNotifier<CloudBackupState> {
             : null,
         filesToDownload: filesToDownload,
         filesToUpload: filesToUpload,
+        dbRemoteNewer: dbRemoteNewer,
+        dbLocalNewer: dbLocalNewer,
       );
     } catch (e) {
       state = CloudBackupState(

@@ -36,10 +36,7 @@ class _LocalFileEntry {
   final String absolutePath;
   final int fileSize;
 
-  const _LocalFileEntry({
-    required this.absolutePath,
-    required this.fileSize,
-  });
+  const _LocalFileEntry({required this.absolutePath, required this.fileSize});
 }
 
 /// 云端备份/恢复业务服务。
@@ -86,9 +83,13 @@ class CloudBackupService {
   }
 
   /// 计算本地与云端的文件差异（轻量扫描，按路径对比）。
-  Future<({int toDownload, int toUpload})> computeSyncDiff(
-    CloudManifest remoteManifest,
-  ) async {
+  Future<
+    ({int toDownload, int toUpload, bool dbRemoteNewer, bool dbLocalNewer})
+  >
+  computeSyncDiff(
+    CloudManifest remoteManifest, {
+    DateTime? localLastSyncTime,
+  }) async {
     final localFiles = await _scanLocalFiles();
     final remoteFiles = remoteManifest.files;
 
@@ -107,7 +108,29 @@ class CloudBackupService {
       }
     }
 
-    return (toDownload: toDownload, toUpload: toUpload);
+    // 对比数据库 SHA256
+    bool dbRemoteNewer = false;
+    bool dbLocalNewer = false;
+    await _database.checkpoint();
+    final dbPath = await AppDatabase.getDatabasePath();
+    final dbBytes = await File(dbPath).readAsBytes();
+    final localDbHash = sha256.convert(dbBytes).toString();
+
+    if (localDbHash != remoteManifest.databaseSha256) {
+      if (localLastSyncTime == null ||
+          remoteManifest.lastModifiedTime.isAfter(localLastSyncTime)) {
+        dbRemoteNewer = true;
+      } else {
+        dbLocalNewer = true;
+      }
+    }
+
+    return (
+      toDownload: toDownload,
+      toUpload: toUpload,
+      dbRemoteNewer: dbRemoteNewer,
+      dbLocalNewer: dbLocalNewer,
+    );
   }
 
   /// 备份到云端（增量）。
@@ -221,9 +244,7 @@ class CloudBackupService {
     final newVersion = (remoteManifest?.version ?? 0) + 1;
     final manifestFiles = <String, CloudFileInfo>{};
     for (final entry in localFiles.entries) {
-      manifestFiles[entry.key] = CloudFileInfo(
-        size: entry.value.fileSize,
-      );
+      manifestFiles[entry.key] = CloudFileInfo(size: entry.value.fileSize);
     }
 
     final manifest = CloudManifest(

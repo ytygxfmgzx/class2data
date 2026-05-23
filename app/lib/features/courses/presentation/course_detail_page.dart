@@ -465,7 +465,7 @@ class _ActionButtons extends ConsumerWidget {
                           ScheduleFormBottomSheet(courseId: courseId),
                     );
                   },
-                  child: const Text('+上课计划'),
+                  child: const Text('+计划'),
                 ),
               ),
               const SizedBox(width: 6),
