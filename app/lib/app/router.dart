@@ -507,7 +507,9 @@ class _SettingsPageState extends ConsumerState<_SettingsPage> {
                   final uri = Uri.parse(
                     'https://mp.weixin.qq.com/mp/appmsgalbum?__biz=MzUzMTY5OTQzMQ==&action=getalbum&album_id=4527638314866393092#wechat_redirect',
                   );
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  debugPrint('[小技巧] 点击，准备打开: $uri');
+                  final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  debugPrint('[小技巧] launchUrl 返回: $launched');
                 },
               ),
               _SettingsRow(
@@ -529,6 +531,7 @@ class _SettingsPageState extends ConsumerState<_SettingsPage> {
   }
 
   Future<void> _showUpdateDialog(UpdateInfo info) async {
+    debugPrint('[_showUpdateDialog] 弹出更新对话框, version=${info.version}, downloadUrl=${info.downloadUrl}');
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -654,7 +657,9 @@ class _VersionRowState extends ConsumerState<_VersionRow> {
   @override
   void initState() {
     super.initState();
+    debugPrint('[_VersionRow] initState 触发');
     Future.microtask(() {
+      debugPrint('[_VersionRow] microtask: 即将 invalidate updateProvider');
       ref.invalidate(updateProvider);
     });
   }
@@ -663,6 +668,7 @@ class _VersionRowState extends ConsumerState<_VersionRow> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final updateAsync = ref.watch(updateProvider);
+    debugPrint('[_VersionRow] build, updateAsync=${updateAsync.isLoading ? "loading" : updateAsync.hasError ? "error" : "data=${updateAsync.valueOrNull}"}');
 
     return FutureBuilder<PackageInfo>(
       future: PackageInfo.fromPlatform(),
@@ -689,6 +695,7 @@ class _VersionRowState extends ConsumerState<_VersionRow> {
           valueColor: hasUpdate ? theme.colorScheme.error : null,
           onTap: () {
             final info = updateAsync.valueOrNull;
+            debugPrint('[_VersionRow] 版本行被点击, info=${info != null ? "有更新 v${info.version}" : "无更新"}');
             if (info != null) {
               widget.onUpdateAvailable(info);
             } else {

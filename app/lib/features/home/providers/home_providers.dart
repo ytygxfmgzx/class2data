@@ -284,7 +284,7 @@ Future<Map<int, _CoursePackageSummary>> _computePackageInfo(
       hasCreditBalance: balance > 0,
       typeLabel: typeLabel,
       remainingCreditsLabel: balance > 0
-          ? '余${balanceService.formatCredits(balance)}节'
+          ? '余${balanceService.formatCredits(balance)}课时'
           : (typeLabel != null ? '已用完' : null),
       periodPackages: periodPacks,
     );

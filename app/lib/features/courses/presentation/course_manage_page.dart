@@ -232,7 +232,7 @@ class _CourseListItem extends ConsumerWidget {
     final service = CreditBalanceService();
     final prefix = showPrefix ? '课时包' : '';
     return Text(
-      '$prefix余${service.formatCredits(credits)}节',
+      '$prefix余${service.formatCredits(credits)}课时',
       style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
     );
   }

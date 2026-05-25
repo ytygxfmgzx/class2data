@@ -26,6 +26,7 @@ class UpdateService {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;
+      debugPrint('[UpdateService] 当前版本: $currentVersion, 开始请求 $_endpoint/api/latest-release');
 
       final client = HttpClient();
       client.connectionTimeout = const Duration(seconds: 10);
@@ -33,11 +34,13 @@ class UpdateService {
         final uri = Uri.parse('$_endpoint/api/latest-release');
         final request = await client.getUrl(uri);
         final response = await request.close();
+        debugPrint('[UpdateService] 响应状态码: ${response.statusCode}');
 
         if (response.statusCode != 200) return null;
 
         final body = await response.transform(utf8.decoder).join();
         final data = jsonDecode(body) as Map<String, dynamic>;
+        debugPrint('[UpdateService] 响应数据: ok=${data['ok']}, version=${data['version']}, apk=${data['apk']}');
 
         if (data['ok'] != true) return null;
         final remoteVersion = data['version'] as String? ?? '';
